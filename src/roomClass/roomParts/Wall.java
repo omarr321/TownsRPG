@@ -1,4 +1,4 @@
-package RoomClass.RoomParts;
+package roomClass.roomParts;
 
 public class Wall extends RoomComponent {
     public Wall(Type type, Color color, String imagePath) {

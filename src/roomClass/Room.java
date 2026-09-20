@@ -1,8 +1,6 @@
-package RoomClass;
+package roomClass;
 
-import RoomClass.RoomParts.RoomComponent;
-
-import java.util.ArrayList;
+import roomClass.roomParts.RoomComponent;
 
 public class Room<T extends RoomComponent>{
     @SuppressWarnings("unchecked") // Suppresses the compiler warning about the cast

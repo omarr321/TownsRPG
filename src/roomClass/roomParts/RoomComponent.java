@@ -1,4 +1,4 @@
-package RoomClass.RoomParts;
+package roomClass.roomParts;
 
 /**
  * This class is a room component which can be part of a room.

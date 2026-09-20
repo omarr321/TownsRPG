@@ -1,7 +1,8 @@
-package RoomClass.RoomParts;
+package roomClass.roomParts;
 
-public class Floor extends RoomComponent {
-    public Floor(Type type, Color color, String imagePath) {
+
+public class Ceiling extends RoomComponent {
+    public Ceiling(Type type, Color color, String imagePath) {
         super(type, color, imagePath);
     }
 

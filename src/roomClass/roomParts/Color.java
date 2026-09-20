@@ -1,4 +1,4 @@
-package RoomClass.RoomParts;
+package roomClass.roomParts;
 
 public class Color {
     int red;
