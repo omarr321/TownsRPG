@@ -23,5 +23,7 @@
 hs_err_pid*
 replay_pid*
 
-#InteliJ idea folder
+#InteliJ folder/files
 /.idea
+*.iml
+/out
