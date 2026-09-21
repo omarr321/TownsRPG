@@ -1,3 +1,5 @@
+package GraphicClasses;
+
 import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,7 +10,7 @@ public class FontWrapper {
 
     public FontWrapper(String filePath, String fontName) {
         this.filePath = filePath;
-        System.out.println("Resource URL: " + getClass().getResource(filePath));
+        //System.out.println("Resource URL: " + getClass().getResource(filePath));
         try (InputStream is = getClass().getResourceAsStream(filePath)) {
             if (is == null) {
                 System.err.println(fontName + " Font not found! Defaulting to Sans Serif.");
