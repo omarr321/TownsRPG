@@ -1,5 +1,7 @@
 package GraphicClasses;
 
+import GraphicClasses.CustomPanels.QuadShapeDrawer;
+import GraphicClasses.CustomPanels.QuadrilateralPanel;
 import GraphicClasses.CustomPanels.RectPanel;
 
 import javax.swing.*;
@@ -8,8 +10,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+/**
+ * This class handles all the drawing to the screen and user input.
+ */
 public class GraphicsManager{
 
+    /**
+     * This window asks for user graphic setting then moves to the game with the setting set.
+     */
     public static class GraphicWindow extends JFrame {
         private static String fullscreenOption = "Yes";
         private static String resOption = "3840 X 2160";
@@ -160,6 +168,17 @@ public class GraphicsManager{
             });
             add(squaresButt);
 
+            squaresButt = new JButton("Draw Shapes Test");
+            squaresButt.setFont(custFont);
+            squaresButt.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
+                    new DrawCustomWindow(width, height, fullscreen);
+                }
+            });
+            add(squaresButt);
+
             setVisible(true);
         }
     }
@@ -202,6 +221,114 @@ public class GraphicsManager{
                 }
                 thickness += 1;
             }
+
+            setVisible(true);
+        }
+    }
+
+    public static class DrawCustomWindow extends JFrame {
+        public DrawCustomWindow(int width, int height, boolean fullscreen) {
+            setTitle("Drawing Custom sizes and shapes");
+            if (fullscreen) {
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                GraphicsDevice gd = ge.getDefaultScreenDevice();
+                gd.setFullScreenWindow(this);
+            } else {
+                setSize(width, height);
+                setResizable(false);
+            }
+            setLocationRelativeTo(null);
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+            setLayout(null);
+
+            RectPanel temp = new RectPanel(5, 5, 30, 45, Color.red, Color.black, 3);
+            RectPanel temp2 = new RectPanel(75, 5, 24, 55, Color.green, Color.black, 2);
+            RectPanel temp3 = new RectPanel(150, 5, 35, 25, Color.yellow, Color.black, 6);
+            RectPanel temp4 = new RectPanel(225, 5, 10, 122, Color.blue);
+            RectPanel temp8 = new RectPanel(525, 5, 70, 70, Color.red, Color.black, 2);
+            RectPanel temp5 = new RectPanel(300, 5, 70, 78, Color.green, Color.black, 6);
+            RectPanel temp6 = new RectPanel(375, 5, 56, 33, Color.yellow, Color.black, 1);
+            RectPanel temp7 = new RectPanel(450, 5, 44, 12, Color.blue, Color.black, 10);
+
+            RectPanel temp9 = new RectPanel(525, 5, 30, 45, "addas", Color.black, 3);
+            RectPanel temp10 = new RectPanel(600, 5, 24, 55, "addas", Color.black, 2);
+            RectPanel temp11 = new RectPanel(675, 5, 35, 25, "addas", Color.black, 6);
+            RectPanel temp12 = new RectPanel(750, 5, 10, 122, "addas");
+            RectPanel temp13 = new RectPanel(825, 5, 70, 70, "addas", Color.black, 2);
+            RectPanel temp14 = new RectPanel(900, 5, 70, 78, "addas", Color.black, 6);
+            RectPanel temp15 = new RectPanel(975, 5, 56, 33, "addas", Color.black, 1);
+            RectPanel temp16 = new RectPanel(1050, 5, 44, 12, "addas", Color.black, 10);
+
+            add(temp);
+            add(temp2);
+            add(temp3);
+            add(temp4);
+            add(temp8);
+            add(temp5);
+            add(temp6);
+            add(temp7);
+
+            add(temp9);
+            add(temp10);
+            add(temp11);
+            add(temp12);
+            add(temp13);
+            add(temp14);
+            add(temp15);
+            add(temp16);
+
+            QuadShapeDrawer tempDraw = new QuadShapeDrawer(new Point(10, 200));
+            tempDraw.drawLine(0, 100);
+            tempDraw.drawLine(70, 77);
+            tempDraw.drawLine(190, 120);
+
+            QuadrilateralPanel test = new QuadrilateralPanel(tempDraw.getPoints(), Color.ORANGE, Color.black, 2);
+            add(test);
+
+            tempDraw = new QuadShapeDrawer(new Point(300, 200));
+            tempDraw.drawLine(10, 90);
+            tempDraw.drawLine(70, 77);
+            tempDraw.drawLine(150, 120);
+            test = new QuadrilateralPanel(tempDraw.getPoints(), Color.GRAY);
+            add(test);
+
+            tempDraw = new QuadShapeDrawer(new Point(500, 200));
+            tempDraw.drawLine(0, 100);
+            tempDraw.drawLine(70, 77);
+            tempDraw.drawLine(190, 120);
+
+            test = new QuadrilateralPanel(tempDraw.getPoints(), "ssss");
+            add(test);
+
+            tempDraw = new QuadShapeDrawer(new Point(700, 200));
+            tempDraw.drawLine(10, 90);
+            tempDraw.drawLine(70, 77);
+            tempDraw.drawLine(150, 120);
+            test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss");
+            add(test);
+
+            tempDraw = new QuadShapeDrawer(new Point(10, 400));
+            tempDraw.drawLine(12, 178);
+            tempDraw.drawLine(98, 134);
+            tempDraw.drawLine(123, 120);
+            test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss", Color.black);
+            add(test);
+
+            tempDraw = new QuadShapeDrawer(new Point(210, 400));
+            tempDraw.drawLine(2, 300);
+            tempDraw.drawLine(98, 134);
+            tempDraw.drawLine(123, 120);
+            test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss", Color.black, 5);
+            add(test);
+
+            tempDraw = new QuadShapeDrawer(new Point(610, 400));
+            tempDraw.drawLine(2, 150);
+            tempDraw.drawLine(98, 134);
+            tempDraw.drawLine(123, 120);
+            test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss", Color.black, 4);
+            add(test);
+
 
             setVisible(true);
         }
