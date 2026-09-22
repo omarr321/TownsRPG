@@ -18,6 +18,7 @@ public class QuadrilateralPanel extends JPanel {
     private String imagePath = "";
     private boolean usesImage = false;
     private final String DEFAULT_IMAGE = "/images/DebugImage.png";
+    private boolean imageWarp = true;
 
     public QuadrilateralPanel(Point[] points, Color fillColor) {
         this.points = points;
@@ -74,6 +75,10 @@ public class QuadrilateralPanel extends JPanel {
         this.setBounds(newX, newY, newW, newH);
     }
 
+    public void setImageWarp(boolean val) {
+        this.imageWarp = val;
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -99,7 +104,7 @@ public class QuadrilateralPanel extends JPanel {
         }
         Polygon quadShape = new Polygon(localX, localY, 4);
 
-        if (usesImage) {
+        if (this.usesImage && this.imageWarp) {
             Image currImage;
             java.net.URL userImg = this.getClass().getResource(imagePath);
             if (userImg != null) {
@@ -153,6 +158,26 @@ public class QuadrilateralPanel extends JPanel {
             }
             customGraphic.drawImage(outputBuff, 0, 0, null);
 
+        } else if (this.usesImage && !this.imageWarp) {
+            Image currImage;
+            java.net.URL userImg = this.getClass().getResource(imagePath);
+            if (userImg != null) {
+                currImage = new ImageIcon(userImg).getImage();
+            } else {
+                System.err.println("Image not found! Defaulting to debug image.");
+                userImg = this.getClass().getResource(DEFAULT_IMAGE);
+                if (userImg == null) {
+                    System.err.println("Default image not found!");
+                    System.exit(1);
+                }
+                currImage = new ImageIcon(userImg).getImage();
+            }
+
+            customGraphic.setClip(quadShape);
+
+            customGraphic.drawImage(currImage, 0, 0, panelW, panelH, null);
+
+            customGraphic.setClip(null);
         } else {
             customGraphic.setColor(this.fillColor);
             customGraphic.fillPolygon(quadShape);

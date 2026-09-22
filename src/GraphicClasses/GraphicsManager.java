@@ -25,6 +25,10 @@ public class GraphicsManager{
         public GraphicWindow(){
             JFrame frame = new JFrame("Graphics");
 
+            GameSettings.fullScreen = true;
+            GameSettings.screenWidth = 3840;
+            GameSettings.screenHeight = 2160;
+
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(550,300);
             frame.setResizable(false);
@@ -62,8 +66,10 @@ public class GraphicsManager{
                     fullscreenOption = (String) FullscreenBox.getSelectedItem();
                     if (fullscreenOption.equals("Yes")){
                         GraphicsBox.setEnabled(false);
+                        GameSettings.fullScreen = true;
                     } else if (fullscreenOption.equals("No")){
                         GraphicsBox.setEnabled(true);
+                        GameSettings.fullScreen = false;
                     }
                 }
             });
@@ -72,6 +78,8 @@ public class GraphicsManager{
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     resOption = (String) GraphicsBox.getSelectedItem();
+                    GameSettings.screenWidth = Integer.parseInt(resOption.split(" X ")[0]);
+                    GameSettings.screenHeight = Integer.parseInt(resOption.split(" X ")[1]);
                 }
             });
 
@@ -101,30 +109,10 @@ public class GraphicsManager{
                     frame.dispose();
 
                     if ((e.getModifiers() & ActionEvent.CTRL_MASK) != 0) {
-                        new DebugWindow(1280,720,false);
+                        new DebugWindow();
+
                     } else {
-                        if(fullscreenOption.equals("Yes")){
-                            new GameWindow(0,0,true);
-                        } else {
-                            //"3840 X 2160", "2560 X 1440","1920 X 1080", "1280 X 720"
-                            switch (resOption) {
-                                case "3840 X 2160":
-                                    new GameWindow(3840,2160,false);
-                                    break;
-                                case "2560 X 1440":
-                                    new GameWindow(2560,1440,false);
-                                    break;
-                                case "1920 X 1080":
-                                    new GameWindow(1920,1080,false);
-                                    break;
-                                case "1280 X 720":
-                                    new GameWindow(1280,720,false);
-                                    break;
-                                default:
-                                    System.err.println("Invaild Screen Size!");
-                                    System.exit(1);
-                            }
-                        }
+                        new GameWindow();
                     }
                 }
             });
@@ -139,21 +127,65 @@ public class GraphicsManager{
     }
 
     public static class DebugWindow extends JFrame {
-        public DebugWindow(int width, int height, boolean fullscreen) {
-            setTitle("Debug Window");
-            if (fullscreen) {
+        private CardLayout cardLayout;
+        private JPanel cardContainer;
+        private String currentCard = "";
+
+        public DebugWindow() {
+            setTitle("Debug");
+            if (GameSettings.fullScreen) {
                 GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
                 GraphicsDevice gd = ge.getDefaultScreenDevice();
                 gd.setFullScreenWindow(this);
+                GameSettings.screenWidth = gd.getDisplayMode().getWidth();
+                GameSettings.screenHeight = gd.getDisplayMode().getHeight();
             } else {
-                setSize(width, height);
+                getContentPane().setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
                 setResizable(false);
+                pack();
             }
             setLocationRelativeTo(null);
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
             setLayout(new GridBagLayout());
 
+            cardLayout = new CardLayout();
+            cardContainer = new JPanel(cardLayout);
+
+            cardContainer.add(createDebugSquares(), "DEBUG_SQUARES");
+            cardContainer.add(createDebugMain(), "DEBUG_MAIN");
+            cardContainer.add(createDebugShapes(), "DEBUG_SHAPES");
+            cardContainer.add(createDebugRoomTest(), "DEBUG_ROOM_TEST");
+
+            setContentPane(cardContainer);
+            switchToCard("DEBUG_MAIN");
+
+            InputMap inputMap = this.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+            inputMap.put(KeyStroke.getKeyStroke("ESCAPE"), "quitAction");
+
+            ActionMap actionMap = this.getRootPane().getActionMap();
+            actionMap.put("quitAction", new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (currentCard.equals("DEBUG_MAIN")) {
+                        dispose();
+                        new GraphicWindow();
+                    } else {
+                        switchToCard("DEBUG_MAIN");
+                    }
+                }
+            });
+
+            setVisible(true);
+        }
+
+        public void switchToCard(String card) {
+            this.currentCard = card;
+            this.cardLayout.show(cardContainer, card);
+        }
+
+        private JPanel createDebugMain() {
+            JPanel panel = new JPanel();
+            panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
             FontWrapper Tuffy_Bold = new FontWrapper("/fonts/Tuffy_Bold.ttf", "Tuffy_Bold");
             Font custFont = Tuffy_Bold.getFont(Font.PLAIN, 24);
 
@@ -162,48 +194,47 @@ public class GraphicsManager{
             squaresButt.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                   dispose();
-                   new DrawSquaresWindow(width, height, fullscreen);
+                    //dispose();
+                    //new DrawSquaresWindow(width, height, fullscreen);
+                    switchToCard("DEBUG_SQUARES");
                 }
             });
-            add(squaresButt);
+            panel.add(squaresButt);
 
             squaresButt = new JButton("Draw Shapes Test");
             squaresButt.setFont(custFont);
             squaresButt.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    dispose();
-                    new DrawCustomWindow(width, height, fullscreen);
+                    switchToCard("DEBUG_SHAPES");
                 }
             });
-            add(squaresButt);
+            panel.add(squaresButt);
 
-            setVisible(true);
+            squaresButt = new JButton("Draw Room Test");
+            squaresButt.setFont(custFont);
+            squaresButt.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    switchToCard("DEBUG_ROOM_TEST");
+                }
+            });
+            panel.add(squaresButt);
+
+            return panel;
         }
-    }
-    public static class DrawSquaresWindow extends JFrame {
-        public DrawSquaresWindow(int width, int height, boolean fullscreen) {
-            setTitle("Drawing Squares");
-            if (fullscreen) {
-                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                GraphicsDevice gd = ge.getDefaultScreenDevice();
-                gd.setFullScreenWindow(this);
-            } else {
-                setSize(width, height);
-                setResizable(false);
-            }
-            setLocationRelativeTo(null);
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-            setLayout(null);
+        private JPanel createDebugSquares() {
+            JPanel panel = new JPanel();
+            panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
+            panel.setLayout(null);
 
             int x = 10, y = 10, thickness = 1;
             int widthT = 100;
             int heightT = 100;
 
             FontWrapper Tuffy_Bold = new FontWrapper("/fonts/Tuffy_Bold.ttf", "Tuffy_Bold");
-            for (int i = 0; i <50; i++) {
+            for (int i = 0; i < 50; i++) {
                 RectPanel temp = new RectPanel(x, y, widthT, heightT, Color.red, Color.black, thickness);
                 temp.setLayout(new GridBagLayout());
 
@@ -212,35 +243,22 @@ public class GraphicsManager{
                 tempLabel.setForeground(Color.white);
                 temp.add(tempLabel);
 
-                add(temp);
+                panel.add(temp);
 
-                x += widthT+25;
-                if (x+widthT >= width) {
+                x += widthT + 25;
+                if (x + widthT >= GameSettings.screenWidth) {
                     x = 10;
-                    y += heightT+25;
+                    y += heightT + 25;
                 }
                 thickness += 1;
             }
-
-            setVisible(true);
+            return panel;
         }
-    }
 
-    public static class DrawCustomWindow extends JFrame {
-        public DrawCustomWindow(int width, int height, boolean fullscreen) {
-            setTitle("Drawing Custom sizes and shapes");
-            if (fullscreen) {
-                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                GraphicsDevice gd = ge.getDefaultScreenDevice();
-                gd.setFullScreenWindow(this);
-            } else {
-                setSize(width, height);
-                setResizable(false);
-            }
-            setLocationRelativeTo(null);
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-            setLayout(null);
+        private JPanel createDebugShapes() {
+            JPanel panel = new JPanel();
+            panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
+            panel.setLayout(null);
 
             RectPanel temp = new RectPanel(5, 5, 30, 45, Color.red, Color.black, 3);
             RectPanel temp2 = new RectPanel(75, 5, 24, 55, Color.green, Color.black, 2);
@@ -260,23 +278,23 @@ public class GraphicsManager{
             RectPanel temp15 = new RectPanel(975, 5, 56, 33, "addas", Color.black, 1);
             RectPanel temp16 = new RectPanel(1050, 5, 44, 12, "addas", Color.black, 10);
 
-            add(temp);
-            add(temp2);
-            add(temp3);
-            add(temp4);
-            add(temp8);
-            add(temp5);
-            add(temp6);
-            add(temp7);
+            panel.add(temp);
+            panel.add(temp2);
+            panel.add(temp3);
+            panel.add(temp4);
+            panel.add(temp8);
+            panel.add(temp5);
+            panel.add(temp6);
+            panel.add(temp7);
 
-            add(temp9);
-            add(temp10);
-            add(temp11);
-            add(temp12);
-            add(temp13);
-            add(temp14);
-            add(temp15);
-            add(temp16);
+            panel.add(temp9);
+            panel.add(temp10);
+            panel.add(temp11);
+            panel.add(temp12);
+            panel.add(temp13);
+            panel.add(temp14);
+            panel.add(temp15);
+            panel.add(temp16);
 
             QuadShapeDrawer tempDraw = new QuadShapeDrawer(new Point(10, 200));
             tempDraw.drawLine(0, 100);
@@ -284,14 +302,14 @@ public class GraphicsManager{
             tempDraw.drawLine(190, 120);
 
             QuadrilateralPanel test = new QuadrilateralPanel(tempDraw.getPoints(), Color.ORANGE, Color.black, 2);
-            add(test);
+            panel.add(test);
 
             tempDraw = new QuadShapeDrawer(new Point(300, 200));
             tempDraw.drawLine(10, 90);
             tempDraw.drawLine(70, 77);
             tempDraw.drawLine(150, 120);
             test = new QuadrilateralPanel(tempDraw.getPoints(), Color.GRAY);
-            add(test);
+            panel.add(test);
 
             tempDraw = new QuadShapeDrawer(new Point(500, 200));
             tempDraw.drawLine(0, 100);
@@ -299,50 +317,76 @@ public class GraphicsManager{
             tempDraw.drawLine(190, 120);
 
             test = new QuadrilateralPanel(tempDraw.getPoints(), "ssss");
-            add(test);
+            panel.add(test);
 
             tempDraw = new QuadShapeDrawer(new Point(700, 200));
             tempDraw.drawLine(10, 90);
             tempDraw.drawLine(70, 77);
             tempDraw.drawLine(150, 120);
             test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss");
-            add(test);
+            panel.add(test);
 
             tempDraw = new QuadShapeDrawer(new Point(10, 400));
             tempDraw.drawLine(12, 178);
             tempDraw.drawLine(98, 134);
             tempDraw.drawLine(123, 120);
             test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss", Color.black);
-            add(test);
+            panel.add(test);
 
             tempDraw = new QuadShapeDrawer(new Point(210, 400));
             tempDraw.drawLine(2, 300);
             tempDraw.drawLine(98, 134);
             tempDraw.drawLine(123, 120);
             test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss", Color.black, 5);
-            add(test);
+            panel.add(test);
 
             tempDraw = new QuadShapeDrawer(new Point(610, 400));
             tempDraw.drawLine(2, 150);
             tempDraw.drawLine(98, 134);
             tempDraw.drawLine(123, 120);
             test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss", Color.black, 4);
-            add(test);
+            panel.add(test);
 
+            tempDraw = new QuadShapeDrawer(new Point(800, 400));
+            tempDraw.drawLine(2, 150);
+            tempDraw.drawLine(98, 134);
+            tempDraw.drawLine(123, 120);
+            test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss", Color.black, 4);
+            test.setImageWarp(false);
+            panel.add(test);
 
-            setVisible(true);
+            tempDraw = new QuadShapeDrawer(new Point(900, 200));
+            tempDraw.drawLine(12, 178);
+            tempDraw.drawLine(98, 134);
+            tempDraw.drawLine(123, 120);
+            test = new QuadrilateralPanel(tempDraw.getPoints(), "sssss", Color.black);
+            test.setImageWarp(false);
+            panel.add(test);
+
+            return panel;
+        }
+
+        private JPanel createDebugRoomTest() {
+            JPanel panel = new JPanel();
+            panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
+            panel.setLayout(null);
+
+            RectPanel backwall = new RectPanel(GameSettings.screenWidth/2-500, GameSettings.screenHeight/2-300, 1000, 600, "pppp", Color.black, 2);
+            panel.add(backwall);
+
+            return panel;
         }
     }
 
     public static class GameWindow extends JFrame {
-        public GameWindow(int width, int height, boolean fullscreen) {
+        public GameWindow() {
             setTitle("Game Window");
-            if (fullscreen) {
+            if (GameSettings.fullScreen) {
                 GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
                 GraphicsDevice gd = ge.getDefaultScreenDevice();
                 gd.setFullScreenWindow(this);
             } else {
-                setSize(width, height);
+                setSize(GameSettings.screenWidth, GameSettings.screenHeight);
                 setResizable(false);
             }
             setLocationRelativeTo(null);
