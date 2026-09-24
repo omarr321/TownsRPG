@@ -1,15 +1,17 @@
-package GraphicClasses.CustomPanels;
+package GUI.CustomPanels;
 
-import GraphicClasses.Point;
-
+import Helper.Point;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 
 /**
  * This class draws a 4 point shape to the screen using pixel points. This can be shaded in or filled with an image.
  */
 public class QuadrilateralPanel extends JPanel {
+    private final String DEFAULT_IMAGE = "/images/DebugImage.png";
+
     private Point[] points;
     private Color borderColor;
     private Color fillColor;
@@ -17,8 +19,11 @@ public class QuadrilateralPanel extends JPanel {
 
     private String imagePath = "";
     private boolean usesImage = false;
-    private final String DEFAULT_IMAGE = "/images/DebugImage.png";
     private boolean imageWarp = true;
+
+    private double[] matrix;          // perspective matrix, computed once on first paint
+    private BufferedImage warpCache;  // warped pixels for the visible area only
+    private Rectangle warpCacheRect;  // the part of the panel that warpCache covers
 
     public QuadrilateralPanel(Point[] points, Color fillColor) {
         this.points = points;
@@ -88,17 +93,12 @@ public class QuadrilateralPanel extends JPanel {
         customGraphic.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         customGraphic.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-
-        int panelW = getWidth();
-        int panelH = getHeight();
         int panelX = getSmallestX() - thickness;
         int panelY = getSmallestY() - thickness;
 
         int[] localX = new int[4];
         int[] localY = new int[4];
         for (int i = 0; i < 4; i++) {
-            // Shifting by panelX and panelY moves the shape inward,
-            // leaving a "padding" border of empty space around the entire polygon!
             localX[i] = points[i].getX() - panelX;
             localY[i] = points[i].getY() - panelY;
         }
@@ -119,46 +119,17 @@ public class QuadrilateralPanel extends JPanel {
                 currImage = new ImageIcon(userImg).getImage();
             }
 
-            ImageIcon icon = new ImageIcon(currImage);
-            int imgW = icon.getIconWidth();
-            int imgH = icon.getIconHeight();
-
-            if (imgW <= 0 || imgH <= 0) return;
-
-            BufferedImage srcBuff = new BufferedImage(imgW, imgH, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D srcGraphics = srcBuff.createGraphics();
-            srcGraphics.drawImage(currImage, 0, 0, null);
-            srcGraphics.dispose();
-
-            BufferedImage outputBuff = new BufferedImage(panelW, panelH, BufferedImage.TYPE_INT_ARGB);
-
-            double[] matrix = computePerspectiveMatrix(imgW, imgH, localX, localY);
-
-            if (matrix != null) {
-                double m00 = matrix[0], m01 = matrix[1], m02 = matrix[2];
-                double m10 = matrix[3], m11 = matrix[4], m12 = matrix[5];
-                double m20 = matrix[6], m21 = matrix[7], m22 = matrix[8];
-
-                for (int y = 0; y < panelH; y++) {
-                    for (int x = 0; x < panelW; x++) {
-                        if (quadShape.contains(x, y)) {
-                            double denominator = m20 * x + m21 * y + m22;
-                            if (Math.abs(denominator) > 1e-10) {
-                                double srcX = (m00 * x + m01 * y + m02) / denominator;
-                                double srcY = (m10 * x + m11 * y + m12) / denominator;
-
-                                if (srcX >= 0 && srcX < imgW && srcY >= 0 && srcY < imgH) {
-                                    int pixelColor = srcBuff.getRGB((int) srcX, (int) srcY);
-                                    outputBuff.setRGB(x, y, pixelColor);
-                                }
-                            }
-                        }
-                    }
+            Rectangle visible = getVisibleRect();
+            if (!visible.isEmpty()) {
+                if (warpCache == null || !visible.equals(warpCacheRect)) {
+                    warpCache = buildWarp(currImage, visible, localX, localY);
+                    warpCacheRect = visible;
+                }
+                if (warpCache != null) {
+                    customGraphic.drawImage(warpCache, visible.x, visible.y, null);
                 }
             }
-            customGraphic.drawImage(outputBuff, 0, 0, null);
-
-        } else if (this.usesImage && !this.imageWarp) {
+        } else if (this.usesImage) {
             Image currImage;
             java.net.URL userImg = this.getClass().getResource(imagePath);
             if (userImg != null) {
@@ -173,11 +144,10 @@ public class QuadrilateralPanel extends JPanel {
                 currImage = new ImageIcon(userImg).getImage();
             }
 
-            customGraphic.setClip(quadShape);
-
-            customGraphic.drawImage(currImage, 0, 0, panelW, panelH, null);
-
-            customGraphic.setClip(null);
+            Shape oldClip = customGraphic.getClip();
+            customGraphic.clip(quadShape);
+            customGraphic.drawImage(currImage, 0, 0, getWidth(), getHeight(), null);
+            customGraphic.setClip(oldClip);
         } else {
             customGraphic.setColor(this.fillColor);
             customGraphic.fillPolygon(quadShape);
@@ -188,6 +158,59 @@ public class QuadrilateralPanel extends JPanel {
             customGraphic.setStroke(new BasicStroke(thickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             customGraphic.drawPolygon(quadShape);
         }
+    }
+
+    private BufferedImage buildWarp(Image currImage, Rectangle area, int[] localX, int[] localY) {
+        ImageIcon icon = new ImageIcon(currImage);
+        int imgW = icon.getIconWidth();
+        int imgH = icon.getIconHeight();
+
+        if (imgW <= 0 || imgH <= 0) return null;
+
+        BufferedImage src = new BufferedImage(imgW, imgH, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D srcGraphics = src.createGraphics();
+        srcGraphics.drawImage(currImage, 0, 0, null);
+        srcGraphics.dispose();
+
+        if (matrix == null) {
+            matrix = computePerspectiveMatrix(imgW, imgH, localX, localY);
+            if (matrix == null) return null;
+        }
+        double m00 = matrix[0], m01 = matrix[1], m02 = matrix[2];
+        double m10 = matrix[3], m11 = matrix[4], m12 = matrix[5];
+        double m20 = matrix[6], m21 = matrix[7], m22 = matrix[8];
+
+        // Read the source pixels directly (much faster than getRGB per pixel)
+        int[] srcPx = ((DataBufferInt) src.getRaster().getDataBuffer()).getData();
+        int[] outPx = new int[area.width * area.height];
+
+        double maxU = imgW - 1;
+        double maxV = imgH - 1;
+
+        for (int row = 0; row < area.height; row++) {
+            int y = area.y + row;          // panel-space y
+            int outRow = row * area.width;
+            for (int col = 0; col < area.width; col++) {
+                int x = area.x + col;      // panel-space x
+
+                double d = m20 * x + m21 * y + m22;
+                if (Math.abs(d) < 1e-10) continue;
+
+                double u = (m00 * x + m01 * y + m02) / d;
+                double v = (m10 * x + m11 * y + m12) / d;
+
+                // Pixels outside the quad map outside the image, so this also
+                // replaces the old (slow) quadShape.contains() check
+                if (u >= 0 && u <= maxU && v >= 0 && v <= maxV) {
+                    outPx[outRow + col] = srcPx[(int) v * imgW + (int) u];
+                }
+            }
+        }
+
+        BufferedImage out = new BufferedImage(area.width, area.height, BufferedImage.TYPE_INT_ARGB);
+        // setDataElements copies the array in, which keeps 'out' eligible for Java2D's GPU caching
+        out.getRaster().setDataElements(0, 0, area.width, area.height, outPx);
+        return out;
     }
 
     private int getSmallestX() {
@@ -213,7 +236,7 @@ public class QuadrilateralPanel extends JPanel {
     }
 
     private int getLargestX() {
-        int largeX = 0;
+        int largeX = Integer.MIN_VALUE;
         for (Point p : points) {
             if (largeX < p.getX()) {
                 largeX = p.getX();
@@ -223,7 +246,7 @@ public class QuadrilateralPanel extends JPanel {
     }
 
     private int getLargestY() {
-        int largeY = 0;
+        int largeY = Integer.MIN_VALUE;
         for (Point p : points) {
             if (largeY < p.getY()) {
                 largeY = p.getY();
@@ -291,5 +314,25 @@ public class QuadrilateralPanel extends JPanel {
 
         // Return full 3x3 projective values mapping layout
         return new double[]{res[0], res[1], res[2], res[3], res[4], res[5], res[6], res[7], 1.0};
+    }
+
+    public Point getPoint(PointLocation p) {
+        return this.points[p.getPointToNum()];
+    }
+
+    public enum PointLocation {
+        TOP_LEFT(0),
+        TOP_RIGHT(1),
+        BOTTOM_RIGHT(2),
+        BOTTOM_LEFT(3);
+
+        private final int num;
+        private PointLocation(int num){
+            this.num = num;
+        }
+
+        public int getPointToNum(){
+            return this.num;
+        }
     }
 }

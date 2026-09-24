@@ -1,4 +1,4 @@
-package GraphicClasses;
+package Helper;
 
 import java.awt.*;
 import java.io.IOException;
@@ -31,7 +31,7 @@ public class FontWrapper {
         }
     }
 
-    public Font getFont(int style, int size){
-        return customFont.deriveFont(style, size);
+    public Font getFont( int size){
+        return customFont.deriveFont(Font.PLAIN, size);
     }
 }

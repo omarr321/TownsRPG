@@ -1,4 +1,4 @@
-package GraphicClasses;
+package Helper;
 
 public class Point {
     private int x;

@@ -1,8 +1,7 @@
-package GraphicClasses.CustomPanels;
+package GUI.CustomPanels;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 
 public class RectPanel extends JPanel {
     private int xCoord;
@@ -15,7 +14,7 @@ public class RectPanel extends JPanel {
 
     private String imagePath = "";
     private boolean usesImage = false;
-    private final String DEFAULT_IMAGE = "/images/DebugImage.png";
+    private static final String DEFAULT_IMAGE = "/images/DebugImage.png";
 
     public RectPanel(int xCoord, int yCoord, int width, int height, Color fillColor) {
         this.xCoord = xCoord;
