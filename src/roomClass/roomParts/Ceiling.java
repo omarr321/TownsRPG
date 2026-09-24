@@ -1,19 +1,22 @@
 package roomClass.roomParts;
 
 
+import java.awt.*;
+
 public class Ceiling extends RoomComponent {
-    public Ceiling(Type type, Color color, String imagePath) {
-        super(type, color, imagePath);
+    public Ceiling(String imagePath) {
+        super(imagePath);
+    }
+    public Ceiling(String imagePath, boolean warped) {
+        super(imagePath, warped);
+    }
+    public Ceiling(Color color) {
+        super(color);
     }
 
     @Override
-    public Type getType() {
+    public DrawType getType() {
         return this.type;
-    }
-
-    @Override
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override
@@ -34,5 +37,20 @@ public class Ceiling extends RoomComponent {
     @Override
     public void setImagePath(String imagePath) {
         this.imagePath = imagePath;
+    }
+
+    @Override
+    public RoomPart getRoomPart() {
+        return this.roomPart;
+    }
+
+    @Override
+    public void setRoomPart(RoomPart roomPart) {
+        this.roomPart = roomPart;
+    }
+
+    @Override
+    public boolean getWarped() {
+        return this.warped;
     }
 }

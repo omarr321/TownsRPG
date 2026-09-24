@@ -1,5 +1,6 @@
 package GUI.CustomPanels;
 
+import Helper.ImageLoader;
 import Helper.Point;
 import javax.swing.*;
 import java.awt.*;
@@ -10,8 +11,6 @@ import java.awt.image.DataBufferInt;
  * This class draws a 4 point shape to the screen using pixel points. This can be shaded in or filled with an image.
  */
 public class QuadrilateralPanel extends JPanel {
-    private final String DEFAULT_IMAGE = "/images/DebugImage.png";
-
     private Point[] points;
     private Color borderColor;
     private Color fillColor;
@@ -105,49 +104,37 @@ public class QuadrilateralPanel extends JPanel {
         Polygon quadShape = new Polygon(localX, localY, 4);
 
         if (this.usesImage && this.imageWarp) {
-            Image currImage;
-            java.net.URL userImg = this.getClass().getResource(imagePath);
-            if (userImg != null) {
-                currImage = new ImageIcon(userImg).getImage();
-            } else {
-                System.err.println("Image not found! Defaulting to debug image.");
-                userImg = this.getClass().getResource(DEFAULT_IMAGE);
-                if (userImg == null) {
-                    System.err.println("Default image not found!");
-                    System.exit(1);
-                }
-                currImage = new ImageIcon(userImg).getImage();
-            }
+            ImageLoader image = new ImageLoader(this.imagePath);
+            Image currImage = image.getImage();
 
             Rectangle visible = getVisibleRect();
             if (!visible.isEmpty()) {
-                if (warpCache == null || !visible.equals(warpCacheRect)) {
-                    warpCache = buildWarp(currImage, visible, localX, localY);
-                    warpCacheRect = visible;
-                }
-                if (warpCache != null) {
-                    customGraphic.drawImage(warpCache, visible.x, visible.y, null);
+                if(image.isLoaded()) {
+                    if (warpCache == null || !visible.equals(warpCacheRect)) {
+                        warpCache = buildWarp(currImage, visible, localX, localY);
+                        warpCacheRect = visible;
+                    }
+                    if (warpCache != null) {
+                        customGraphic.drawImage(warpCache, visible.x, visible.y, null);
+                    }
+                } else {
+                    customGraphic.setColor(Color.MAGENTA);
+                    customGraphic.fillPolygon(quadShape);
                 }
             }
         } else if (this.usesImage) {
-            Image currImage;
-            java.net.URL userImg = this.getClass().getResource(imagePath);
-            if (userImg != null) {
-                currImage = new ImageIcon(userImg).getImage();
-            } else {
-                System.err.println("Image not found! Defaulting to debug image.");
-                userImg = this.getClass().getResource(DEFAULT_IMAGE);
-                if (userImg == null) {
-                    System.err.println("Default image not found!");
-                    System.exit(1);
-                }
-                currImage = new ImageIcon(userImg).getImage();
-            }
+            ImageLoader image = new ImageLoader(this.imagePath);
+            Image currImage = image.getImage();
 
-            Shape oldClip = customGraphic.getClip();
-            customGraphic.clip(quadShape);
-            customGraphic.drawImage(currImage, 0, 0, getWidth(), getHeight(), null);
-            customGraphic.setClip(oldClip);
+            if(image.isLoaded()){
+                Shape oldClip = customGraphic.getClip();
+                customGraphic.clip(quadShape);
+                customGraphic.drawImage(currImage, 0, 0, getWidth(), getHeight(), null);
+                customGraphic.setClip(oldClip);
+            } else {
+                customGraphic.setColor(Color.MAGENTA);
+                customGraphic.fillPolygon(quadShape);
+            }
         } else {
             customGraphic.setColor(this.fillColor);
             customGraphic.fillPolygon(quadShape);

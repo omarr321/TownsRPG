@@ -1,18 +1,21 @@
 package roomClass.roomParts;
 
+import java.awt.*;
+
 public class Floor extends RoomComponent {
-    public Floor(Type type, Color color, String imagePath) {
-        super(type, color, imagePath);
+    public Floor(String imagePath) {
+        super(imagePath);
+    }
+    public Floor(String imagePath, boolean warped) {
+        super(imagePath, warped);
+    }
+    public Floor(Color color) {
+        super(color);
     }
 
     @Override
-    public Type getType() {
+    public DrawType getType() {
         return this.type;
-    }
-
-    @Override
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override
@@ -33,5 +36,20 @@ public class Floor extends RoomComponent {
     @Override
     public void setImagePath(String imagePath) {
         this.imagePath = imagePath;
+    }
+
+    @Override
+    public RoomPart getRoomPart() {
+        return this.roomPart;
+    }
+
+    @Override
+    public void setRoomPart(RoomPart roomPart) {
+        this.roomPart = roomPart;
+    }
+
+    @Override
+    public boolean getWarped() {
+        return this.warped;
     }
 }

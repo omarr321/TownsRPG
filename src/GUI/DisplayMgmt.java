@@ -6,10 +6,11 @@ import GUI.Lighting.LightingLayerUI;
 import Helper.Point;
 import Helper.QuadShapeDrawer;
 import GUI.CustomPanels.QuadrilateralPanel;
-import GUI.CustomPanels.QuadrilateralPanel.PointLocation;
 import GUI.CustomPanels.RectPanel;
 import Helper.FontWrapper;
 import Helper.GameSettings;
+import roomClass.Room;
+import roomClass.roomParts.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -157,12 +158,14 @@ public class DisplayMgmt {
             cardContainer.add(createDebugMain(), "DEBUG_MAIN");
             cardContainer.add(createDebugShapes(), "DEBUG_SHAPES");
             cardContainer.add(createDebugRoomTest(), "DEBUG_ROOM_TEST");
+            cardContainer.add(createDebugLightRoomTest(), "DEBUG_ROOM_LIGHT_TEST");
 
             setContentPane(cardContainer);
             switchToCard("DEBUG_MAIN");
 
             InputMap inputMap = this.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
             inputMap.put(KeyStroke.getKeyStroke("ESCAPE"), "quitAction");
+            inputMap.put(KeyStroke.getKeyStroke("L"), "lightAction");
 
             ActionMap actionMap = this.getRootPane().getActionMap();
             actionMap.put("quitAction", new AbstractAction() {
@@ -174,6 +177,16 @@ public class DisplayMgmt {
                         new GraphicWindow();
                     } else {
                         switchToCard("DEBUG_MAIN");
+                    }
+                }
+            });
+            actionMap.put("lightAction",new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (currentCard.equals("DEBUG_ROOM_TEST")) {
+                        switchToCard("DEBUG_ROOM_LIGHT_TEST");
+                    } else if (currentCard.equals("DEBUG_ROOM_LIGHT_TEST")) {
+                        switchToCard("DEBUG_ROOM_TEST");
                     }
                 }
             });
@@ -367,19 +380,41 @@ public class DisplayMgmt {
             return panel;
         }
 
-        private JPanel createDebugRoomTest() {
-            JPanel litPanel = new JPanel(new BorderLayout());
-            JPanel panel = new JPanel();
-            panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
-            panel.setLayout(null);
 
+        private JPanel createDebugRoomTest() {
+            Room<RoomComponent> room = createDebugRoom();
+
+            return room.putToScreen();
+        }
+
+        private Room<RoomComponent> createDebugRoom() {
             final double WALL_RATIO = 1.5/3.0;
             final double SC_PERCENT = 0.85;
             final int SC_ANGLE = 30;
             final int OFFSCREEN_MULI = 4;
 
+            RoomPoints roomPt = new RoomPoints(WALL_RATIO, SC_PERCENT, SC_ANGLE, OFFSCREEN_MULI);
+
+            Floor floor = new Floor("sss");
+            Ceiling ceiling = new Ceiling("sss");
+            Room<RoomComponent> room = new Room<>(floor, ceiling, roomPt);
+            room.setWall(new Wall("sss"), 0);
+            room.setWall(new Wall("/images/LightTest.png"), 1);
+            room.setWall(new Wall("sss"), 2);
+            room.setWall(new Wall("sss"), 3);
+            room.setLookingIndex(1);
+
+            return room;
+        }
+
+        private JPanel createDebugLightRoomTest() {
+            JPanel litPanel = new JPanel(new BorderLayout());
+
+            Room<RoomComponent> room = createDebugRoom();
+
             LightMgmt lightMgmt = new LightMgmt(new Color(80, 100, 180), 0.15f);
-            JLayer<JComponent> litLayer = new JLayer<>(panel, new LightingLayerUI(lightMgmt));
+            JLayer<JComponent> litLayer = new JLayer<>(room.putToScreen(), new LightingLayerUI(lightMgmt));
+
             LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 50, 40, .01f, Color.orange);
             lightMgmt.addLight(orangePoint);
 
@@ -388,54 +423,6 @@ public class DisplayMgmt {
 
             LightPoint greenPoint = new LightPoint(new Point(250, 750), LightPoint.LightShape.SQUARE, 200, 0, 0, .1f, new Color(31, 219, 47));
             lightMgmt.addLight(greenPoint);
-
-            int backWidth = Math.toIntExact(Math.round(GameSettings.screenWidth * SC_PERCENT));
-            int backHeight = Math.toIntExact(Math.round(backWidth * WALL_RATIO));
-            int backStartPointX = ((GameSettings.screenWidth/2)-(backWidth/2));
-            int backStartPointY = ((GameSettings.screenHeight/2)-(backHeight/2));
-
-            QuadShapeDrawer backWallDrawer = new QuadShapeDrawer(new Helper.Point(backStartPointX, backStartPointY));
-            backWallDrawer.drawLine(0, backWidth);
-            backWallDrawer.drawLine(90, backHeight);
-            backWallDrawer.drawLine(180, backWidth);
-            QuadrilateralPanel backWall = new QuadrilateralPanel(backWallDrawer.getPoints(), "/images/LightTest.png", Color.BLACK, 4);
-            panel.add(backWall);
-
-            //Setting known points
-            Helper.Point p1 = backWallDrawer.getPoint(PointLocation.TOP_RIGHT);
-            Helper.Point p4 = backWallDrawer.getPoint(PointLocation.BOTTOM_RIGHT);
-            //Calculating non-known points
-            Helper.Point p2 = QuadShapeDrawer.calcPoint(p1, 360-SC_ANGLE, backWidth*OFFSCREEN_MULI);
-            Helper.Point p3 = QuadShapeDrawer.calcPoint(p4, SC_ANGLE, backWidth*OFFSCREEN_MULI);
-
-            QuadrilateralPanel rightWall = new QuadrilateralPanel(new Helper.Point[]{p1, p2, p3, p4}, "sss", Color.BLACK, 4);
-            panel.add(rightWall);
-
-            //Setting known points
-            p2 = backWallDrawer.getPoint(PointLocation.TOP_LEFT);
-            p3 = backWallDrawer.getPoint(PointLocation.BOTTOM_LEFT);
-            // Calculating non-known points
-            p1 = QuadShapeDrawer.calcPoint(p2, 180+SC_ANGLE, backWidth*OFFSCREEN_MULI);
-            p4 = QuadShapeDrawer.calcPoint(p3, 180-SC_ANGLE, backWidth*OFFSCREEN_MULI);
-
-            QuadrilateralPanel leftWall = new QuadrilateralPanel(new Helper.Point[]{p1, p2, p3, p4}, "sss", Color.BLACK, 4);
-            panel.add(leftWall);
-
-            //Grabbing the points for the ceiling
-            p1 = leftWall.getPoint(PointLocation.TOP_LEFT);
-            p2 = rightWall.getPoint(PointLocation.TOP_RIGHT);
-            p3 = rightWall.getPoint(PointLocation.TOP_LEFT);
-            p4 = leftWall.getPoint(PointLocation.TOP_RIGHT);
-
-            panel.add(new QuadrilateralPanel(new Helper.Point[]{p1,p2,p3, p4}, "sss", Color.BLACK, 4));
-
-            //Grabbing the points for the floor
-            p1 = leftWall.getPoint(PointLocation.BOTTOM_RIGHT);
-            p2 = rightWall.getPoint(PointLocation.BOTTOM_LEFT);
-            p3 = rightWall.getPoint(PointLocation.BOTTOM_RIGHT);
-            p4 = leftWall.getPoint(PointLocation.BOTTOM_LEFT);
-
-            panel.add(new QuadrilateralPanel(new Point[]{p1,p2,p3, p4}, "sss", Color.BLACK, 4));
 
             litPanel.add(litLayer, BorderLayout.CENTER);
             return litPanel;

@@ -1,28 +1,32 @@
 package roomClass;
 
+import GUI.CustomPanels.QuadrilateralPanel;
+import Helper.GameSettings;
 import roomClass.roomParts.RoomComponent;
+import roomClass.roomParts.RoomComponent.RoomPart;
+import roomClass.roomParts.RoomPoints;
+
+import javax.swing.*;
+import java.awt.*;
 
 public class Room<T extends RoomComponent>{
-    @SuppressWarnings("unchecked") // Suppresses the compiler warning about the cast
-    T[] walls = (T[]) new Object[4];
+    T[] walls = (T[]) new RoomComponent[4];
     int lookingWall = 0;
     T floor = null;
     T ceiling = null;
-
-    /**
-     * Empty Constructor
-     */
-    public Room(){
-    }
+    boolean completed = false;
+    RoomPoints roomPoints;
 
     /**
      * Constructor that takes in the floor and ceiling and sets them.
      * @param floor The floor of the room.
      * @param ceiling The ceiling of the room.
      */
-    public Room(T floor, T ceiling){
+    public Room(T floor, T ceiling, RoomPoints roomPoints){
         this.floor = floor;
         this.ceiling = ceiling;
+        this.completed = false;
+        this.roomPoints = roomPoints;
     }
 
     /**
@@ -30,16 +34,15 @@ public class Room<T extends RoomComponent>{
      * <p>
      * Adds walls to the walls array via index. If the index falls outside 0-3, this method will not do anything and returns false. Otherwise, it will set the wall.
      * <p/>
-     * @param wall The wall to add.
+     *
+     * @param wall  The wall to add.
      * @param index What index to add it at.
-     * @return True if the wall was added, false if not.
      */
-    public boolean addWall(T wall, int index){
+    public void setWall(T wall, int index){
         if (index < 0 || index > walls.length - 1){
-            return false;
+            return;
         }
         walls[index] = wall;
-        return true;
     }
 
     public T getLookingWall() {
@@ -53,6 +56,13 @@ public class Room<T extends RoomComponent>{
     public T getRightWall() {
         int temp = this.lookingWall+1;
         if (temp > 3){temp = 0;}
+        return this.walls[temp];
+    }
+    public T getFourthWall() {
+        int temp = this.lookingWall-1;
+        if (temp < 0){temp = 3;}
+        temp -= 1;
+        if (temp < 0){temp = 3;}
         return this.walls[temp];
     }
 
@@ -85,7 +95,22 @@ public class Room<T extends RoomComponent>{
             return false;
         }
         this.lookingWall = index;
+        this.updateRoomPart();
         return true;
+    }
+
+    private void updateRoomPart() {
+        try {
+            this.getLookingWall().setRoomPart(RoomPart.BACK_WALL);
+            this.getLeftWall().setRoomPart(RoomPart.LEFT_WALL);
+            this.getRightWall().setRoomPart(RoomPart.RIGHT_WALL);
+            this.getFourthWall().setRoomPart(RoomPart.FOURTH_WALL);
+            this.ceiling.setRoomPart(RoomPart.CEILING);
+            this.floor.setRoomPart(RoomPart.FLOOR);
+            this.completed = true;
+        } catch (NullPointerException e) {
+            System.err.println("Attempted to update the room parts but fail as there are null values!");
+        }
     }
 
     /**
@@ -96,6 +121,7 @@ public class Room<T extends RoomComponent>{
         if (this.lookingWall > walls.length - 1){
             this.lookingWall = 0;
         }
+        updateRoomPart();
     }
 
     /**
@@ -106,5 +132,36 @@ public class Room<T extends RoomComponent>{
         if (this.lookingWall < 0){
             this.lookingWall = walls.length - 1;
         }
+        updateRoomPart();
+    }
+
+    public JPanel putToScreen() {
+        JPanel panel = new JPanel();
+        panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
+        panel.setLayout(null);
+
+        if (!this.completed) {
+            System.err.println("Can not put " + this + " to screen as it is an imcomplete room!");
+            return panel;
+        }
+
+        panel.add(convertRoomComponent(this.floor));
+        panel.add(convertRoomComponent(this.ceiling));
+        for (RoomComponent rc : this.walls) {
+            panel.add(convertRoomComponent(rc));
+        }
+
+        return panel;
+    }
+
+    private QuadrilateralPanel convertRoomComponent(RoomComponent roomComp) {
+        QuadrilateralPanel temp;
+        if (roomComp.getType() == RoomComponent.DrawType.IMAGE) {
+            temp = new QuadrilateralPanel(this.roomPoints.getPartPoints(roomComp.getRoomPart()), roomComp.getImagePath(), Color.BLACK, 3);
+            temp.setImageWarp(roomComp.getWarped());
+        } else {
+            temp = new QuadrilateralPanel(this.roomPoints.getPartPoints(roomComp.getRoomPart()), roomComp.getColor(), Color.BLACK, 3);
+        }
+        return temp;
     }
 }

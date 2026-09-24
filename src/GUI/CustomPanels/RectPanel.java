@@ -1,5 +1,7 @@
 package GUI.CustomPanels;
 
+import Helper.ImageLoader;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -64,20 +66,14 @@ public class RectPanel extends JPanel {
         Graphics2D customGraphic = (Graphics2D) g;
 
         if (usesImage) {
-            Image currImage;
-            java.net.URL userImg = this.getClass().getResource(imagePath);
-            if (userImg != null) {
-                currImage = new ImageIcon(userImg).getImage();
+            ImageLoader image = new ImageLoader(this.imagePath);
+            Image currImage = image.getImage();
+            if (image.isLoaded()) {
+                customGraphic.drawImage(currImage, 0, 0, width, height, this);
             } else {
-                System.err.println("Image not found! Defaulting to debug image.");
-                userImg = this.getClass().getResource(DEFAULT_IMAGE);
-                if  (userImg == null) {
-                    System.err.println("Default image not found! What did you do?!");
-                    System.exit(1);
-                }
-                currImage = new ImageIcon(userImg).getImage();
+                customGraphic.setColor(Color.MAGENTA);
+                customGraphic.fillRect(0, 0, this.width, this.height);
             }
-            customGraphic.drawImage(currImage, 0, 0, width, height, this);
         } else {
             customGraphic.setColor(this.fillColor);
             customGraphic.fillRect(0, 0, this.width, this.height);
