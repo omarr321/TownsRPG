@@ -398,7 +398,7 @@ public class DisplayMgmt {
             backWallDrawer.drawLine(0, backWidth);
             backWallDrawer.drawLine(90, backHeight);
             backWallDrawer.drawLine(180, backWidth);
-            QuadrilateralPanel backWall = new QuadrilateralPanel(backWallDrawer.getPoints(), "sss", Color.BLACK, 4);
+            QuadrilateralPanel backWall = new QuadrilateralPanel(backWallDrawer.getPoints(), "/images/LightTest.png", Color.BLACK, 4);
             panel.add(backWall);
 
             //Setting known points
