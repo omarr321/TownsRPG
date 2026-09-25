@@ -16,8 +16,7 @@ import roomClass.roomParts.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 /**
  * This class handles all the drawing to the screen and user input.
@@ -424,7 +423,9 @@ public class DisplayMgmt {
             LightingLayerUI lightingUI = new LightingLayerUI(lightMgmt);
             lightingUI.setShowBlockers(showBlockers);
             lightingUI.setShowLights(showLights);
-            JLayer<JComponent> litLayer = new JLayer<>(room.putToScreen(), lightingUI);
+
+            JPanel roomPanel = room.putToScreen();
+            JLayer<JComponent> litLayer = new JLayer<>(roomPanel, lightingUI);
 
             Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
             Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
@@ -434,7 +435,7 @@ public class DisplayMgmt {
             LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 0, 0, .01f, Color.orange);
             lightMgmt.addLight(orangePoint);
 
-            LightPoint whitePoint = new LightPoint(ULC, LightPoint.LightShape.SQUARE, 400, 0, 0, .6f, Color.white);
+            LightPoint whitePoint = new LightPoint(ULC, LightPoint.LightShape.SQUARE, 400, 0, 0, .6f, Color.blue);
             lightMgmt.addLight(whitePoint);
 
             LightPoint greenPoint = new LightPoint(LLC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, new Color(31, 219, 47));
@@ -443,9 +444,70 @@ public class DisplayMgmt {
             orangePoint = new LightPoint(URC, LightPoint.LightShape.CIRCLE, 900, 0, 0, .50f, Color.red);
             lightMgmt.addLight(orangePoint);
 
-            whitePoint = new LightPoint(LRC, LightPoint.LightShape.SQUARE, 400, 0, 0, .1f, Color.white);
+            whitePoint = new LightPoint(LRC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, Color.blue);
             lightMgmt.addLight(whitePoint);
 
+            LightPoint mouseLight = new LightPoint(new Point(0, 0), LightPoint.LightShape.CIRCLE, 150, 0, 0, .8f, Color.white);
+            lightMgmt.addLight(mouseLight);
+
+            MouseAdapter followMouse = new MouseAdapter() {
+                @Override
+                public void mouseMoved(MouseEvent e) { moveLight(e); }
+
+                @Override
+                public void mouseDragged(MouseEvent e) { moveLight(e); }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    if (!lightMgmt.getLights().contains(mouseLight)) {
+                        lightMgmt.addLight(mouseLight);
+                    }
+                    moveLight(e);
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    lightMgmt.removeLight(mouseLight); // turn the light off when the mouse leaves
+                    litLayer.repaint();
+                }
+
+                private void moveLight(MouseEvent e) {
+                    Point free = lightLayer.nearestFreePoint(e.getX(), e.getY(), roomPanel.getWidth(), roomPanel.getHeight());
+                    if (free == null) {
+                        return; // nowhere free to put it
+                    }
+                    mouseLight.getLoc().setX(free.getX());
+                    mouseLight.getLoc().setY(free.getY());
+                    litLayer.repaint();
+                }
+            };
+
+            roomPanel.addMouseListener(followMouse);
+            roomPanel.addMouseMotionListener(followMouse);
+
+            // Place the light at the mouse as soon as this panel shows up, even if the mouse hasn't moved
+            roomPanel.addHierarchyListener(e -> {
+                if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) == 0 || !roomPanel.isShowing()) {
+                    return;
+                }
+                PointerInfo pointer = MouseInfo.getPointerInfo();
+                if (pointer == null) {
+                    return; // no mouse available
+                }
+                java.awt.Point mouse = pointer.getLocation();              // screen coordinates
+                SwingUtilities.convertPointFromScreen(mouse, roomPanel);   // now panel coordinates
+
+                if (roomPanel.contains(mouse)) {
+                    mouseLight.getLoc().setX(mouse.x);
+                    mouseLight.getLoc().setY(mouse.y);
+                    if (!lightMgmt.getLights().contains(mouseLight)) {
+                        lightMgmt.addLight(mouseLight);
+                    }
+                } else {
+                    lightMgmt.removeLight(mouseLight); // mouse is outside, so no light yet
+                }
+                litLayer.repaint();
+            });
 
             litPanel.add(litLayer, BorderLayout.CENTER);
             return litPanel;
