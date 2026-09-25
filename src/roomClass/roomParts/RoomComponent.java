@@ -1,5 +1,7 @@
 package roomClass.roomParts;
 
+import GUI.Lighting.LightBlocker;
+
 import java.awt.*;
 
 /**
@@ -41,6 +43,8 @@ public abstract class RoomComponent {
     public abstract void setRoomPart(RoomPart roomPart);
 
     public abstract boolean getWarped();
+
+    public abstract LightBlocker[] convertLightBlockers();
 
     //enum for the type of images you can use for the walls/ceiling/whatever
     public enum DrawType {

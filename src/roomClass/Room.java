@@ -1,6 +1,8 @@
 package roomClass;
 
 import GUI.CustomPanels.QuadrilateralPanel;
+import GUI.Lighting.LightBlocker;
+import GUI.Lighting.LightLayer;
 import Helper.GameSettings;
 import roomClass.roomParts.RoomComponent;
 import roomClass.roomParts.RoomComponent.RoomPart;
@@ -8,6 +10,8 @@ import roomClass.roomParts.RoomPoints;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Room<T extends RoomComponent>{
     T[] walls = (T[]) new RoomComponent[4];
@@ -152,6 +156,30 @@ public class Room<T extends RoomComponent>{
         }
 
         return panel;
+    }
+
+    public void updateLightLayer(LightLayer ll) {
+        if (!this.completed) {
+            System.err.println("Can not update " + this + " lights as it is an imcomplete room!");
+            return;
+        }
+
+        ArrayList<LightBlocker> lightBlockers = new ArrayList<>();
+        lightBlockers.addAll(Arrays.stream(convertLightBlockers(this.floor)).toList());
+        lightBlockers.add(new LightBlocker(convertRoomComponent(this.floor), LightBlocker.LightTag.REFLECT));
+        lightBlockers.addAll(Arrays.stream(convertLightBlockers(this.ceiling)).toList());
+        lightBlockers.add(new LightBlocker(convertRoomComponent(this.ceiling), LightBlocker.LightTag.REFLECT));
+
+        lightBlockers.add(new LightBlocker(convertRoomComponent(this.getLeftWall()), LightBlocker.LightTag.REFLECT));
+        lightBlockers.add(new LightBlocker(convertRoomComponent(this.getRightWall()), LightBlocker.LightTag.REFLECT));
+
+        for (LightBlocker lb : lightBlockers) {
+            ll.addBlocker(lb);
+        }
+    }
+
+    private LightBlocker[] convertLightBlockers(RoomComponent roomComponent) {
+        return roomComponent.convertLightBlockers();
     }
 
     private QuadrilateralPanel convertRoomComponent(RoomComponent roomComp) {

@@ -1,5 +1,6 @@
 package GUI.Lighting;
 
+import Helper.GameSettings;
 import Helper.Point;
 
 import java.awt.*;
@@ -18,10 +19,10 @@ public class LightPoint {
     public LightPoint(Point loc, LightShape shape, int dist, int deadZone, int deadZoneFade, float intensity, Color lightColor) {
         this.loc = loc;
         this.shape = shape;
-        this.dist = dist;
-        this.deadZone = deadZone;
+        this.dist = GameSettings.scale(dist);
+        this.deadZone = GameSettings.scale(deadZone-1);
         this.intensity = intensity;
-        this.deadZoneFade = deadZoneFade;
+        this.deadZoneFade = GameSettings.scale(deadZoneFade);
         setLightColor(lightColor);
     }
 

@@ -1,5 +1,6 @@
 package GUI;
 
+import GUI.Lighting.LightLayer;
 import GUI.Lighting.LightMgmt;
 import GUI.Lighting.LightPoint;
 import GUI.Lighting.LightingLayerUI;
@@ -158,7 +159,8 @@ public class DisplayMgmt {
             cardContainer.add(createDebugMain(), "DEBUG_MAIN");
             cardContainer.add(createDebugShapes(), "DEBUG_SHAPES");
             cardContainer.add(createDebugRoomTest(), "DEBUG_ROOM_TEST");
-            cardContainer.add(createDebugLightRoomTest(), "DEBUG_ROOM_LIGHT_TEST");
+            cardContainer.add(createDebugLightRoomTest(false, false), "DEBUG_ROOM_LIGHT_TEST");
+            cardContainer.add(createDebugLightRoomTest(true, true), "DEBUG_ROOM_BLOCKERS_TEST");
 
             setContentPane(cardContainer);
             switchToCard("DEBUG_MAIN");
@@ -186,6 +188,8 @@ public class DisplayMgmt {
                     if (currentCard.equals("DEBUG_ROOM_TEST")) {
                         switchToCard("DEBUG_ROOM_LIGHT_TEST");
                     } else if (currentCard.equals("DEBUG_ROOM_LIGHT_TEST")) {
+                        switchToCard("DEBUG_ROOM_BLOCKERS_TEST");
+                    } else if (currentCard.equals("DEBUG_ROOM_BLOCKERS_TEST")) {
                         switchToCard("DEBUG_ROOM_TEST");
                     }
                 }
@@ -209,8 +213,6 @@ public class DisplayMgmt {
             squaresButt.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    //dispose();
-                    //new DrawSquaresWindow(width, height, fullscreen);
                     switchToCard("DEBUG_SQUARES");
                 }
             });
@@ -395,34 +397,55 @@ public class DisplayMgmt {
 
             RoomPoints roomPt = new RoomPoints(WALL_RATIO, SC_PERCENT, SC_ANGLE, OFFSCREEN_MULI);
 
-            Floor floor = new Floor("sss");
-            Ceiling ceiling = new Ceiling("sss");
+            Floor floor = new Floor("/images/LightTest.png");
+            Ceiling ceiling = new Ceiling("/images/LightTest.png");
             Room<RoomComponent> room = new Room<>(floor, ceiling, roomPt);
-            room.setWall(new Wall("sss"), 0);
+            room.setWall(new Wall("/images/LightTest.png"), 0);
             room.setWall(new Wall("/images/LightTest.png"), 1);
-            room.setWall(new Wall("sss"), 2);
-            room.setWall(new Wall("sss"), 3);
+            room.setWall(new Wall("/images/LightTest.png"), 2);
+            room.setWall(new Wall("/images/LightTest.png"), 3);
             room.setLookingIndex(1);
 
             return room;
         }
 
-        private JPanel createDebugLightRoomTest() {
+        private JPanel createDebugLightRoomTest(boolean showBlockers, boolean showLights) {
             JPanel litPanel = new JPanel(new BorderLayout());
 
+            //1 - Creates the debug room!
             Room<RoomComponent> room = createDebugRoom();
 
-            LightMgmt lightMgmt = new LightMgmt(new Color(80, 100, 180), 0.15f);
-            JLayer<JComponent> litLayer = new JLayer<>(room.putToScreen(), new LightingLayerUI(lightMgmt));
+            //2 - Creates the lightLayer and passes it to the room so it can add its LightBlockers
+            LightLayer lightLayer = new LightLayer(GameSettings.screenWidth, GameSettings.screenHeight);
+            room.updateLightLayer(lightLayer);
 
-            LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 50, 40, .01f, Color.orange);
+            LightMgmt lightMgmt = new LightMgmt(lightLayer, new Color(80, 100, 180), .35f);
+            lightMgmt.setReflectSpread(75);
+            LightingLayerUI lightingUI = new LightingLayerUI(lightMgmt);
+            lightingUI.setShowBlockers(showBlockers);
+            lightingUI.setShowLights(showLights);
+            JLayer<JComponent> litLayer = new JLayer<>(room.putToScreen(), lightingUI);
+
+            Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
+            Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
+            Point URC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
+            Point LRC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
+
+            LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 0, 0, .01f, Color.orange);
             lightMgmt.addLight(orangePoint);
 
-            LightPoint whitePoint = new LightPoint(new Point(300, 300), LightPoint.LightShape.SQUARE, 400, 30, 30, .01f, Color.white);
+            LightPoint whitePoint = new LightPoint(ULC, LightPoint.LightShape.SQUARE, 400, 0, 0, .6f, Color.white);
             lightMgmt.addLight(whitePoint);
 
-            LightPoint greenPoint = new LightPoint(new Point(250, 750), LightPoint.LightShape.SQUARE, 200, 0, 0, .1f, new Color(31, 219, 47));
+            LightPoint greenPoint = new LightPoint(LLC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, new Color(31, 219, 47));
             lightMgmt.addLight(greenPoint);
+
+            orangePoint = new LightPoint(URC, LightPoint.LightShape.CIRCLE, 900, 0, 0, .50f, Color.red);
+            lightMgmt.addLight(orangePoint);
+
+            whitePoint = new LightPoint(LRC, LightPoint.LightShape.SQUARE, 400, 0, 0, .1f, Color.white);
+            lightMgmt.addLight(whitePoint);
+
 
             litPanel.add(litLayer, BorderLayout.CENTER);
             return litPanel;

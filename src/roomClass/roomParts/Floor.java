@@ -1,5 +1,7 @@
 package roomClass.roomParts;
 
+import GUI.Lighting.LightBlocker;
+
 import java.awt.*;
 
 public class Floor extends RoomComponent {
@@ -51,5 +53,10 @@ public class Floor extends RoomComponent {
     @Override
     public boolean getWarped() {
         return this.warped;
+    }
+
+    @Override
+    public LightBlocker[] convertLightBlockers() {
+        return new LightBlocker[0];
     }
 }
