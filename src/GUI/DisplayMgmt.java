@@ -447,7 +447,7 @@ public class DisplayMgmt {
             whitePoint = new LightPoint(LRC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, Color.blue);
             lightMgmt.addLight(whitePoint);
 
-            LightPoint mouseLight = new LightPoint(new Point(0, 0), LightPoint.LightShape.CIRCLE, 150, 0, 0, .8f, Color.white);
+            LightPoint mouseLight = new LightPoint(new Point(0, 0), LightPoint.LightShape.CIRCLE, 100, 0, 0, .5f, Color.white);
             lightMgmt.addLight(mouseLight);
 
             MouseAdapter followMouse = new MouseAdapter() {
