@@ -2,6 +2,7 @@ package roomClass.roomParts;
 
 
 import GUI.Lighting.LightBlocker;
+import GUI.Lighting.LightPoint;
 
 import java.awt.*;
 
@@ -58,6 +59,35 @@ public class Ceiling extends RoomComponent {
 
     @Override
     public LightBlocker[] convertLightBlockers() {
+        System.err.println("The ceiling can not contain light blockers!");
         return new LightBlocker[0];
+    }
+
+    @Override
+    public void addLightBlocker(LightBlocker lightBlocker) {
+        System.err.println("The ceiling can not contain light blockers!");
+    }
+
+    @Override
+    public boolean removeLightBlocker(LightBlocker lightBlocker) {
+        System.err.println("The ceiling can not contain light blockers!");
+        return false;
+    }
+
+    @Override
+    public LightPoint[] convertLightPoints() {
+        System.err.println("The ceiling can not contain lights!");
+        return new LightPoint[0];
+    }
+
+    @Override
+    public void addLightPoint(LightPoint lightPoint) {
+        System.err.println("The ceiling can not contain lights!");
+    }
+
+    @Override
+    public boolean removeLightPoint(LightPoint lightPoint) {
+        System.err.println("The ceiling can not contain lights!");
+        return false;
     }
 }

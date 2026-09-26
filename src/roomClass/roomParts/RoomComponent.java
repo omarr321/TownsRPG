@@ -1,8 +1,10 @@
 package roomClass.roomParts;
 
 import GUI.Lighting.LightBlocker;
+import GUI.Lighting.LightPoint;
 
 import java.awt.*;
+import java.util.ArrayList;
 
 /**
  * This class is a room component which can be part of a room.
@@ -13,6 +15,8 @@ public abstract class RoomComponent {
     protected String imagePath = "";
     protected RoomPart roomPart;
     protected boolean warped = true;
+    protected ArrayList<LightBlocker> lightBlockers = new ArrayList<>();
+    protected ArrayList<LightPoint> lightPoints = new ArrayList<>();
 
     public RoomComponent(Color color) {
         this.type = DrawType.SOLID;
@@ -45,6 +49,12 @@ public abstract class RoomComponent {
     public abstract boolean getWarped();
 
     public abstract LightBlocker[] convertLightBlockers();
+    public abstract void addLightBlocker(LightBlocker lightBlocker);
+    public abstract boolean removeLightBlocker(LightBlocker lightBlocker);
+
+    public abstract LightPoint[] convertLightPoints();
+    public abstract void addLightPoint(LightPoint lightPoint);
+    public abstract boolean removeLightPoint(LightPoint lightPoint);
 
     //enum for the type of images you can use for the walls/ceiling/whatever
     public enum DrawType {

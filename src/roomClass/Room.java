@@ -185,10 +185,10 @@ public class Room<T extends RoomComponent>{
     private QuadrilateralPanel convertRoomComponent(RoomComponent roomComp) {
         QuadrilateralPanel temp;
         if (roomComp.getType() == RoomComponent.DrawType.IMAGE) {
-            temp = new QuadrilateralPanel(this.roomPoints.getPartPoints(roomComp.getRoomPart()), roomComp.getImagePath(), Color.BLACK, 3);
+            temp = new QuadrilateralPanel(this.roomPoints.getPartPoints(roomComp.getRoomPart()), roomComp.getImagePath(), Color.BLACK, GameSettings.scale(3));
             temp.setImageWarp(roomComp.getWarped());
         } else {
-            temp = new QuadrilateralPanel(this.roomPoints.getPartPoints(roomComp.getRoomPart()), roomComp.getColor(), Color.BLACK, 3);
+            temp = new QuadrilateralPanel(this.roomPoints.getPartPoints(roomComp.getRoomPart()), roomComp.getColor(), Color.BLACK, GameSettings.scale(3));
         }
         return temp;
     }

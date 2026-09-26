@@ -1,6 +1,7 @@
 package roomClass.roomParts;
 
 import GUI.Lighting.LightBlocker;
+import GUI.Lighting.LightPoint;
 
 import java.awt.*;
 
@@ -57,6 +58,41 @@ public class Wall extends RoomComponent {
 
     @Override
     public LightBlocker[] convertLightBlockers() {
-        return new LightBlocker[0];
+        return this.lightBlockers.toArray(new LightBlocker[]{});
+    }
+
+    @Override
+    public void addLightBlocker(LightBlocker lightBlocker) {
+        this.lightBlockers.add(lightBlocker);
+    }
+
+    @Override
+    public boolean removeLightBlocker(LightBlocker lightBlocker) {
+        if (this.lightBlockers.contains(lightBlocker)) {
+            this.lightBlockers.remove(lightBlocker);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public LightPoint[] convertLightPoints() {
+        return this.lightPoints.toArray(new LightPoint[]{});
+    }
+
+    @Override
+    public void addLightPoint(LightPoint lightPoint) {
+        this.lightPoints.add(lightPoint);
+    }
+
+    @Override
+    public boolean removeLightPoint(LightPoint lightPoint) {
+        if (this.lightPoints.contains(lightPoint)) {
+            this.lightPoints.remove(lightPoint);
+            return true;
+        } else {
+            return false;
+        }
     }
 }
