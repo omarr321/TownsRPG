@@ -64,15 +64,22 @@ public class Ceiling extends RoomComponent {
     }
 
     @Override
-    public void addLightBlocker(LightBlocker lightBlocker) {
-        System.err.println("The ceiling can not contain light blockers!");
+    public void addLightBlocker(String name, LightBlocker lightBlocker) {
+        System.err.println("The ceiling can not contain lights blockers!");
     }
 
     @Override
-    public boolean removeLightBlocker(LightBlocker lightBlocker) {
-        System.err.println("The ceiling can not contain light blockers!");
+    public boolean removeLightBlocker(String name) {
+        System.err.println("The ceiling can not contain lights blockers!");
         return false;
     }
+
+    @Override
+    public LightBlocker getLightBlocker(String name) {
+        System.err.println("The ceiling can not contain lights blockers!");
+        return null;
+    }
+
 
     @Override
     public LightPoint[] convertLightPoints() {
@@ -81,13 +88,19 @@ public class Ceiling extends RoomComponent {
     }
 
     @Override
-    public void addLightPoint(LightPoint lightPoint) {
+    public void addLightPoint(String name, LightPoint lightPoint) {
         System.err.println("The ceiling can not contain lights!");
     }
 
     @Override
-    public boolean removeLightPoint(LightPoint lightPoint) {
+    public boolean removeLightPoint(String name) {
         System.err.println("The ceiling can not contain lights!");
         return false;
+    }
+
+    @Override
+    public LightPoint getLightPoint(String name) {
+        System.err.println("The ceiling can not contain lights!");
+        return null;
     }
 }

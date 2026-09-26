@@ -63,14 +63,20 @@ public class Floor extends RoomComponent {
     }
 
     @Override
-    public void addLightBlocker(LightBlocker lightBlocker) {
+    public void addLightBlocker(String name, LightBlocker lightBlocker) {
         System.err.println("The floor can not contain light blockers!");
     }
 
     @Override
-    public boolean removeLightBlocker(LightBlocker lightBlocker) {
+    public boolean removeLightBlocker(String name) {
         System.err.println("The floor can not contain light blockers!");
         return false;
+    }
+
+    @Override
+    public LightBlocker getLightBlocker(String name) {
+        System.err.println("The floor can not contain light blockers!");
+        return null;
     }
 
     @Override
@@ -80,13 +86,19 @@ public class Floor extends RoomComponent {
     }
 
     @Override
-    public void addLightPoint(LightPoint lightPoint) {
+    public void addLightPoint(String name, LightPoint lightPoint) {
         System.err.println("The floor can not contain lights!");
     }
 
     @Override
-    public boolean removeLightPoint(LightPoint lightPoint) {
+    public boolean removeLightPoint(String name) {
         System.err.println("The floor can not contain lights!");
         return false;
+    }
+
+    @Override
+    public LightPoint getLightPoint(String name) {
+        System.err.println("The floor can not contain lights!");
+        return null;
     }
 }

@@ -1,5 +1,7 @@
 package GUI.Lighting;
 
+import Helper.GameSettings;
+
 import javax.swing.JComponent;
 import javax.swing.JLayer;
 import javax.swing.plaf.LayerUI;
@@ -92,7 +94,7 @@ public class LightingLayerUI extends LayerUI<JComponent> {
             g.dispose();
             return;
         }
-        g.setStroke(new BasicStroke(2));
+        g.setStroke(new BasicStroke(GameSettings.scale(2)));
         for (LightBlocker blocker : lightLayer.getBlockers()) {
             if (!blocker.isActive()) {
                 g.setColor(Color.GRAY);
@@ -109,7 +111,7 @@ public class LightingLayerUI extends LayerUI<JComponent> {
 
     /** Draws a small white square at each light's position. */
     private void drawLightMarkers(Graphics2D g) {
-        int size = 12;
+        int size = GameSettings.scale(12);
         int half = size / 2;
         for (LightPoint light : lightMgmt.getLights()) {
             int x = light.getLoc().getX() - half;

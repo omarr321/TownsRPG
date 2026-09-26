@@ -405,6 +405,29 @@ public class DisplayMgmt {
             room.setWall(new Wall("/images/LightTest.png"), 3);
             room.setLookingIndex(1);
 
+            Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
+            Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
+            Point URC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
+            Point LRC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
+
+            LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 0, 0, .01f, Color.orange);
+            room.getLookingWall().addLightPoint("oPoint", orangePoint);
+
+            LightPoint whitePoint = new LightPoint(ULC, LightPoint.LightShape.SQUARE, 400, 0, 0, .6f, Color.blue);
+            room.getLookingWall().addLightPoint("wPoint", whitePoint);
+
+            LightPoint greenPoint = new LightPoint(LLC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, new Color(31, 219, 47));
+            room.getLookingWall().addLightPoint("gPoint", greenPoint);
+
+            orangePoint = new LightPoint(URC, LightPoint.LightShape.CIRCLE, 900, 0, 0, .50f, Color.red);
+            room.getLookingWall().addLightPoint("rPoint", orangePoint);
+
+            whitePoint = new LightPoint(LRC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, Color.blue);
+            room.getLookingWall().addLightPoint("bPoint", whitePoint);
+
+            LightPoint mouseLight = new LightPoint(new Point(0, 0), LightPoint.LightShape.CIRCLE, 100, 0, 0, .5f, Color.white);
+            room.getLookingWall().addLightPoint("mouseLight", mouseLight);
+
             return room;
         }
 
@@ -427,30 +450,13 @@ public class DisplayMgmt {
             JPanel roomPanel = room.putToScreen();
             JLayer<JComponent> litLayer = new JLayer<>(roomPanel, lightingUI);
 
-            Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
-            Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
-            Point URC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
-            Point LRC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
-
-            LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 0, 0, .01f, Color.orange);
-            lightMgmt.addLight(orangePoint);
-
-            LightPoint whitePoint = new LightPoint(ULC, LightPoint.LightShape.SQUARE, 400, 0, 0, .6f, Color.blue);
-            lightMgmt.addLight(whitePoint);
-
-            LightPoint greenPoint = new LightPoint(LLC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, new Color(31, 219, 47));
-            lightMgmt.addLight(greenPoint);
-
-            orangePoint = new LightPoint(URC, LightPoint.LightShape.CIRCLE, 900, 0, 0, .50f, Color.red);
-            lightMgmt.addLight(orangePoint);
-
-            whitePoint = new LightPoint(LRC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, Color.blue);
-            lightMgmt.addLight(whitePoint);
-
-            LightPoint mouseLight = new LightPoint(new Point(0, 0), LightPoint.LightShape.CIRCLE, 100, 0, 0, .5f, Color.white);
-            lightMgmt.addLight(mouseLight);
+            LightPoint[] lightPoints = room.getLookingWall().convertLightPoints();
+            for (LightPoint lp : lightPoints) {
+                lightMgmt.addLight(lp);
+            }
 
             MouseAdapter followMouse = new MouseAdapter() {
+                private final LightPoint mouseLight = room.getLookingWall().getLightPoint("mouseLight");
                 @Override
                 public void mouseMoved(MouseEvent e) { moveLight(e); }
 
@@ -486,27 +492,31 @@ public class DisplayMgmt {
             roomPanel.addMouseMotionListener(followMouse);
 
             // Place the light at the mouse as soon as this panel shows up, even if the mouse hasn't moved
-            roomPanel.addHierarchyListener(e -> {
-                if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) == 0 || !roomPanel.isShowing()) {
-                    return;
-                }
-                PointerInfo pointer = MouseInfo.getPointerInfo();
-                if (pointer == null) {
-                    return; // no mouse available
-                }
-                java.awt.Point mouse = pointer.getLocation();              // screen coordinates
-                SwingUtilities.convertPointFromScreen(mouse, roomPanel);   // now panel coordinates
-
-                if (roomPanel.contains(mouse)) {
-                    mouseLight.getLoc().setX(mouse.x);
-                    mouseLight.getLoc().setY(mouse.y);
-                    if (!lightMgmt.getLights().contains(mouseLight)) {
-                        lightMgmt.addLight(mouseLight);
+            roomPanel.addHierarchyListener(new HierarchyListener() {
+                private final LightPoint mouseLight = room.getLookingWall().getLightPoint("mouseLight");
+                @Override
+                public void hierarchyChanged(HierarchyEvent e) {
+                    if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) == 0 || !roomPanel.isShowing()) {
+                        return;
                     }
-                } else {
-                    lightMgmt.removeLight(mouseLight); // mouse is outside, so no light yet
+                    PointerInfo pointer = MouseInfo.getPointerInfo();
+                    if (pointer == null) {
+                        return; // no mouse available
+                    }
+                    java.awt.Point mouse = pointer.getLocation();              // screen coordinates
+                    SwingUtilities.convertPointFromScreen(mouse, roomPanel);   // now panel coordinates
+
+                    if (roomPanel.contains(mouse)) {
+                        mouseLight.getLoc().setX(mouse.x);
+                        mouseLight.getLoc().setY(mouse.y);
+                        if (!lightMgmt.getLights().contains(mouseLight)) {
+                            lightMgmt.addLight(mouseLight);
+                        }
+                    } else {
+                        lightMgmt.removeLight(mouseLight); // mouse is outside, so no light yet
+                    }
+                    litLayer.repaint();
                 }
-                litLayer.repaint();
             });
 
             litPanel.add(litLayer, BorderLayout.CENTER);

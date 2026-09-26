@@ -165,9 +165,7 @@ public class Room<T extends RoomComponent>{
         }
 
         ArrayList<LightBlocker> lightBlockers = new ArrayList<>();
-        lightBlockers.addAll(Arrays.stream(convertLightBlockers(this.floor)).toList());
         lightBlockers.add(new LightBlocker(convertRoomComponent(this.floor), LightBlocker.LightTag.REFLECT));
-        lightBlockers.addAll(Arrays.stream(convertLightBlockers(this.ceiling)).toList());
         lightBlockers.add(new LightBlocker(convertRoomComponent(this.ceiling), LightBlocker.LightTag.REFLECT));
 
         lightBlockers.add(new LightBlocker(convertRoomComponent(this.getLeftWall()), LightBlocker.LightTag.REFLECT));

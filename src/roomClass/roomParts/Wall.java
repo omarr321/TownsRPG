@@ -4,6 +4,7 @@ import GUI.Lighting.LightBlocker;
 import GUI.Lighting.LightPoint;
 
 import java.awt.*;
+import java.util.ArrayList;
 
 public class Wall extends RoomComponent {
     public Wall(String imagePath) {
@@ -58,41 +59,49 @@ public class Wall extends RoomComponent {
 
     @Override
     public LightBlocker[] convertLightBlockers() {
-        return this.lightBlockers.toArray(new LightBlocker[]{});
+        return this.lightBlockers.values().toArray(new LightBlocker[]{});
     }
 
     @Override
-    public void addLightBlocker(LightBlocker lightBlocker) {
-        this.lightBlockers.add(lightBlocker);
+    public void addLightBlocker(String name, LightBlocker lightBlocker) {
+        this.lightBlockers.put(name, lightBlocker);
     }
 
     @Override
-    public boolean removeLightBlocker(LightBlocker lightBlocker) {
-        if (this.lightBlockers.contains(lightBlocker)) {
-            this.lightBlockers.remove(lightBlocker);
+    public boolean removeLightBlocker(String name) {
+        if (this.lightBlockers.containsKey(name)) {
+            this.lightBlockers.remove(name);
             return true;
-        } else {
-            return false;
         }
+        return false;
+    }
+
+    @Override
+    public LightBlocker getLightBlocker(String name) {
+        return this.lightBlockers.get(name);
     }
 
     @Override
     public LightPoint[] convertLightPoints() {
-        return this.lightPoints.toArray(new LightPoint[]{});
+        return this.lightPoints.values().toArray(new LightPoint[]{});
     }
 
     @Override
-    public void addLightPoint(LightPoint lightPoint) {
-        this.lightPoints.add(lightPoint);
+    public void addLightPoint(String name, LightPoint lightPoint) {
+        this.lightPoints.put(name, lightPoint);
     }
 
     @Override
-    public boolean removeLightPoint(LightPoint lightPoint) {
-        if (this.lightPoints.contains(lightPoint)) {
-            this.lightPoints.remove(lightPoint);
+    public boolean removeLightPoint(String name) {
+        if (this.lightPoints.containsKey(name)) {
+            this.lightPoints.remove(name);
             return true;
-        } else {
-            return false;
         }
+        return false;
+    }
+
+    @Override
+    public LightPoint getLightPoint(String name) {
+        return this.lightPoints.get(name);
     }
 }

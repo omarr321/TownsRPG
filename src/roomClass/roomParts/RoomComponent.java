@@ -5,6 +5,8 @@ import GUI.Lighting.LightPoint;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class is a room component which can be part of a room.
@@ -15,8 +17,8 @@ public abstract class RoomComponent {
     protected String imagePath = "";
     protected RoomPart roomPart;
     protected boolean warped = true;
-    protected ArrayList<LightBlocker> lightBlockers = new ArrayList<>();
-    protected ArrayList<LightPoint> lightPoints = new ArrayList<>();
+    protected Map<String, LightBlocker> lightBlockers = new HashMap<>();
+    protected Map<String, LightPoint> lightPoints = new HashMap<>();
 
     public RoomComponent(Color color) {
         this.type = DrawType.SOLID;
@@ -49,12 +51,14 @@ public abstract class RoomComponent {
     public abstract boolean getWarped();
 
     public abstract LightBlocker[] convertLightBlockers();
-    public abstract void addLightBlocker(LightBlocker lightBlocker);
-    public abstract boolean removeLightBlocker(LightBlocker lightBlocker);
+    public abstract void addLightBlocker(String name, LightBlocker lightBlocker);
+    public abstract boolean removeLightBlocker(String name);
+    public abstract LightBlocker getLightBlocker(String name);
 
     public abstract LightPoint[] convertLightPoints();
-    public abstract void addLightPoint(LightPoint lightPoint);
-    public abstract boolean removeLightPoint(LightPoint lightPoint);
+    public abstract void addLightPoint(String name, LightPoint lightPoint);
+    public abstract boolean removeLightPoint(String name);
+    public abstract LightPoint getLightPoint(String name);
 
     //enum for the type of images you can use for the walls/ceiling/whatever
     public enum DrawType {
