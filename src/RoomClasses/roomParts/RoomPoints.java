@@ -1,9 +1,9 @@
-package roomClass.roomParts;
+package RoomClasses.roomParts;
 
 import Helper.GameSettings;
 import Helper.Point;
 import Helper.QuadShapeDrawer;
-import roomClass.roomParts.RoomComponent.RoomPart;
+import RoomClasses.roomParts.RoomComponent.RoomPart;
 
 public class RoomPoints {
     private double WALL_RATIO;

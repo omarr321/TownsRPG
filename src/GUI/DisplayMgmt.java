@@ -10,8 +10,8 @@ import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.CustomPanels.RectPanel;
 import Helper.FontWrapper;
 import Helper.GameSettings;
-import roomClass.Room;
-import roomClass.roomParts.*;
+import RoomClasses.Room;
+import RoomClasses.roomParts.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -435,26 +435,28 @@ public class DisplayMgmt {
         private JPanel createDebugLightRoomTest(boolean showBlockers, boolean showLights) {
             JPanel litPanel = new JPanel(new BorderLayout());
 
-            //1 - Creates the debug room!
+            //1 - Creates the debug room.
             Room<RoomComponent> room = createDebugRoom();
 
             //2 - Creates the lightLayer and passes it to the room so it can add its LightBlockers
             LightLayer lightLayer = new LightLayer(GameSettings.screenWidth, GameSettings.screenHeight);
             room.updateLightLayer(lightLayer);
 
+            //3 - Creates the lightMgmt and passes it to the room so it can add its Light Points
             LightMgmt lightMgmt = new LightMgmt(lightLayer, new Color(80, 100, 180), .15f);
             lightMgmt.setReflectSpread(80);
+            room.updateLightMgmt(lightMgmt);
+
+            //4 - Creating the light UI and passing in the LightMgmt
             LightingLayerUI lightingUI = new LightingLayerUI(lightMgmt);
             lightingUI.setShowBlockers(showBlockers);
             lightingUI.setShowLights(showLights);
 
+            //5 - Creating the graphics for the room and applying the lightUI to it.
             JPanel roomPanel = room.putToScreen();
             JLayer<JComponent> litLayer = new JLayer<>(roomPanel, lightingUI);
 
-            LightPoint[] lightPoints = room.getLookingWall().convertLightPoints();
-            for (LightPoint lp : lightPoints) {
-                lightMgmt.addLight(lp);
-            }
+
 
             MouseAdapter followMouse = new MouseAdapter() {
                 private final LightPoint mouseLight = room.getLookingWall().getLightPoint("mouseLight");
@@ -559,11 +561,6 @@ public class DisplayMgmt {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new GraphicWindow();
-            }
-        });
+        SwingUtilities.invokeLater(GraphicWindow::new);
     }
 }

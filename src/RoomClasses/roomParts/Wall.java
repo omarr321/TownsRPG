@@ -1,10 +1,9 @@
-package roomClass.roomParts;
+package RoomClasses.roomParts;
 
 import GUI.Lighting.LightBlocker;
 import GUI.Lighting.LightPoint;
 
 import java.awt.*;
-import java.util.ArrayList;
 
 public class Wall extends RoomComponent {
     public Wall(String imagePath) {

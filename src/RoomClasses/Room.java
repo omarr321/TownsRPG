@@ -1,17 +1,18 @@
-package roomClass;
+package RoomClasses;
 
 import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.Lighting.LightBlocker;
 import GUI.Lighting.LightLayer;
+import GUI.Lighting.LightMgmt;
+import GUI.Lighting.LightPoint;
 import Helper.GameSettings;
-import roomClass.roomParts.RoomComponent;
-import roomClass.roomParts.RoomComponent.RoomPart;
-import roomClass.roomParts.RoomPoints;
+import RoomClasses.roomParts.RoomComponent;
+import RoomClasses.roomParts.RoomComponent.RoomPart;
+import RoomClasses.roomParts.RoomPoints;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Room<T extends RoomComponent>{
     T[] walls = (T[]) new RoomComponent[4];
@@ -155,6 +156,8 @@ public class Room<T extends RoomComponent>{
             panel.add(convertRoomComponent(rc));
         }
 
+        //TODO: Add Objects to display.
+
         return panel;
     }
 
@@ -171,8 +174,17 @@ public class Room<T extends RoomComponent>{
         lightBlockers.add(new LightBlocker(convertRoomComponent(this.getLeftWall()), LightBlocker.LightTag.REFLECT));
         lightBlockers.add(new LightBlocker(convertRoomComponent(this.getRightWall()), LightBlocker.LightTag.REFLECT));
 
+        //TODO: Add Objects Lightblockers if there are any.
+
         for (LightBlocker lb : lightBlockers) {
             ll.addBlocker(lb);
+        }
+    }
+
+    public void updateLightMgmt(LightMgmt lm) {
+        LightPoint[] lightPoints = this.getLookingWall().convertLightPoints();
+        for (LightPoint lp : lightPoints) {
+            lm.addLight(lp);
         }
     }
 

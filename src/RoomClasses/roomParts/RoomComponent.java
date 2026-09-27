@@ -1,54 +1,32 @@
-package roomClass.roomParts;
+package RoomClasses.roomParts;
 
 import GUI.Lighting.LightBlocker;
 import GUI.Lighting.LightPoint;
+import RoomClasses.RoomObjects.RoomObj;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * This class is a room component which can be part of a room.
  */
-public abstract class RoomComponent {
-    protected DrawType type;
-    protected Color color;
-    protected String imagePath = "";
+public abstract class RoomComponent extends RoomObj {
     protected RoomPart roomPart;
-    protected boolean warped = true;
     protected Map<String, LightBlocker> lightBlockers = new HashMap<>();
     protected Map<String, LightPoint> lightPoints = new HashMap<>();
 
     public RoomComponent(Color color) {
-        this.type = DrawType.SOLID;
-        this.color = color;
-        this.imagePath = "";
+        super(color);
     }
 
     public RoomComponent(String imagePath) {
-        this.type = DrawType.IMAGE;
-        this.color = null;
-        this.imagePath = imagePath;
+        super(imagePath);
     }
 
-    public RoomComponent(String imagePath, boolean warpped) {
-        this(imagePath);
-        this.warped = warpped;
+    public RoomComponent(String imagePath, boolean warped) {
+        super(imagePath, warped);
     }
-
-    public abstract DrawType getType();
-
-    public abstract Color getColor();
-    public abstract void setColor(Color color);
-
-    public abstract String getImagePath();
-    public abstract void setImagePath(String imagePath);
-
-    public abstract RoomPart getRoomPart();
-    public abstract void setRoomPart(RoomPart roomPart);
-
-    public abstract boolean getWarped();
 
     public abstract LightBlocker[] convertLightBlockers();
     public abstract void addLightBlocker(String name, LightBlocker lightBlocker);
@@ -59,13 +37,6 @@ public abstract class RoomComponent {
     public abstract void addLightPoint(String name, LightPoint lightPoint);
     public abstract boolean removeLightPoint(String name);
     public abstract LightPoint getLightPoint(String name);
-
-    //enum for the type of images you can use for the walls/ceiling/whatever
-    public enum DrawType {
-        SOLID,
-        IMAGE,
-        DEFAULT
-    }
 
     public enum RoomPart {
         CEILING(new int[]{4, 5, 1, 0}),
