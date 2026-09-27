@@ -100,8 +100,10 @@ public class LightingLayerUI extends LayerUI<JComponent> {
                 g.setColor(Color.GRAY);
             } else if (blocker.getTag() == LightBlocker.LightTag.REFLECT) {
                 g.setColor(Color.CYAN);
-            } else {
+            } else if (blocker.getTag() == LightBlocker.LightTag.BLOCK){
                 g.setColor(Color.RED);
+            } else {
+                g.setColor(Color.GREEN);
             }
             Rectangle r = blocker.getLightBounds();
             g.drawRect(r.x, r.y, r.width - 1, r.height - 1);

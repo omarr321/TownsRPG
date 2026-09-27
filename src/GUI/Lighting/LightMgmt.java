@@ -19,7 +19,6 @@ import java.util.List;
  * and works out what color things should be once lit.
  */
 public class LightMgmt {
-    public static final String LIGHT_TAG_KEY = "LightMgmt.LightTag";
     private final List<LightPoint> lights = new ArrayList<>();
 
     private Color ambientColor;
@@ -44,6 +43,9 @@ public class LightMgmt {
     private BufferedImage shadowMask;
     private byte[] maskPx;
     private float[] reflectBuf;
+
+    // LIT blockers: how much of the averaged light they get, and the most they can get
+    private float litBlend = 0.3f;
 
     public LightMgmt(Color ambientColor, float ambientIntensity) {
         setAmbient(ambientColor, ambientIntensity);
@@ -143,12 +145,18 @@ public class LightMgmt {
     private static final class ActiveBlocker {
         final Rectangle bounds;
         final boolean reflect;
+        final boolean lit;
         final int reflectDist;
+        final float litBlend;
 
-        ActiveBlocker(Rectangle bounds, boolean reflect, int reflectDist) {
+        float litRed, litGreen, litBlue;
+
+        ActiveBlocker(Rectangle bounds, boolean reflect, boolean lit, int reflectDist, float litBlend) {
             this.bounds = bounds;
             this.reflect = reflect;
             this.reflectDist = reflectDist;
+            this.lit = lit;
+            this.litBlend = litBlend;
         }
     }
 
@@ -166,9 +174,11 @@ public class LightMgmt {
                 continue;
             }
             boolean reflect = blocker.getTag() == LightBlocker.LightTag.REFLECT;
+            boolean lit = blocker.getTag() == LightBlocker.LightTag.LIT;
             int baseDist = blocker.getReflectDist() > 0 ? blocker.getReflectDist() : reflectSpread;
             int dist = GameSettings.scale(baseDist); // reference pixels -> screen pixels
-            result.add(new ActiveBlocker(blocker.getLightBounds(), reflect, dist));
+            float blend = blocker.getLitBlend() >= 0f ? blocker.getLitBlend() : litBlend;
+            result.add(new ActiveBlocker(blocker.getLightBounds(), reflect, lit, dist, blend));
         }
         return result;
     }
@@ -177,7 +187,7 @@ public class LightMgmt {
      * Finds every active blocker in the light layer.
      * Rectangles are in the drawn layer's coordinates, which are the same as the lit image's.
      */
-    private void collectBlockers(List<Rectangle> blockers, List<Boolean> reflects) {
+    private void collectBlockers(List<Rectangle> blockers, List<Boolean> reflects, List<Boolean> lits) {
         if (lightLayer == null) {
             return;
         }
@@ -187,6 +197,7 @@ public class LightMgmt {
             }
             blockers.add(blocker.getLightBounds());
             reflects.add(blocker.getTag() == LightBlocker.LightTag.REFLECT);
+            lits.add(blocker.getTag() == LightBlocker.LightTag.LIT);
         }
     }
 
@@ -276,6 +287,7 @@ public class LightMgmt {
             List<ActiveBlocker> active = new ArrayList<>();
             List<Rectangle> activeRects = new ArrayList<>();
             List<ActiveBlocker> activeReflectors = new ArrayList<>();
+            List<ActiveBlocker> activeLit = new ArrayList<>();
             for (ActiveBlocker b : blockers) {
                 // A reflector's taper can reach past the light's square, so grow the check for it
                 Rectangle check = b.reflect ? grow(reach, b.reflectDist) : reach;
@@ -288,6 +300,9 @@ public class LightMgmt {
                 }
                 if (b.reflect) {
                     activeReflectors.add(b);
+                }
+                if (b.lit) {
+                    activeLit.add(b);
                 }
             }
 
@@ -326,6 +341,20 @@ public class LightMgmt {
             }
             for (Rectangle area : taperAreas) {
                 flushReflection(light, area, width);
+            }
+            for (ActiveBlocker b : activeLit) {
+                float avg = averageFaceLight(light, b.bounds, hasShadow, x0, y0, x1, y1, width, height);
+                if (avg > 0f) {
+                    b.litRed   += avg * light.getRed();
+                    b.litGreen += avg * light.getGreen();
+                    b.litBlue  += avg * light.getBlue();
+                }
+            }
+        }
+
+        for (ActiveBlocker b : blockers) {
+            if (b.lit) {
+                fillLit(b, width, height);
             }
         }
 
@@ -611,5 +640,102 @@ public class LightMgmt {
                 }
             }
         }
+    }
+
+// ---------------------------------------------------------------
+// LIT blockers
+// ---------------------------------------------------------------
+
+    /**
+     * The average light strength on the edges of a rectangle that face a light, sampled just outside
+     * each edge. Samples out of the light's reach or shaded by other blockers count toward the average
+     * as 0 or dimmed values, so a partly covered blocker gets less light.
+     */
+    private float averageFaceLight(LightPoint light, Rectangle r, boolean hasShadow,
+                                   int sx0, int sy0, int sx1, int sy1, int width, int height) {
+        double lx = light.getLoc().getX() + 0.5;
+        double ly = light.getLoc().getY() + 0.5;
+
+        int left = r.x;
+        int top = r.y;
+        int right = r.x + r.width;    // exclusive
+        int bottom = r.y + r.height;  // exclusive
+
+        int off = 2;                                  // step outside the edge, clear of the shadow's antialiasing
+        int step = Math.max(1, GameSettings.scale(4)); // spacing between samples
+
+        float total = 0f;
+        int count = 0;
+
+        if (lx < left) {           // left face
+            for (int y = top; y < bottom; y += step) {
+                total += sampleLight(light, left - off, y, hasShadow, sx0, sy0, sx1, sy1);
+                count++;
+            }
+        }
+        if (lx > right) {          // right face
+            for (int y = top; y < bottom; y += step) {
+                total += sampleLight(light, right - 1 + off, y, hasShadow, sx0, sy0, sx1, sy1);
+                count++;
+            }
+        }
+        if (ly < top) {            // top face
+            for (int x = left; x < right; x += step) {
+                total += sampleLight(light, x, top - off, hasShadow, sx0, sy0, sx1, sy1);
+                count++;
+            }
+        }
+        if (ly > bottom) {         // bottom face
+            for (int x = left; x < right; x += step) {
+                total += sampleLight(light, x, bottom - 1 + off, hasShadow, sx0, sy0, sx1, sy1);
+                count++;
+            }
+        }
+
+        return count == 0 ? 0f : total / count;
+    }
+
+    /** The light's strength at one point, dimmed by the shadow mask if something shades it. */
+    private float sampleLight(LightPoint light, int x, int y, boolean hasShadow,
+                              int sx0, int sy0, int sx1, int sy1) {
+        float s = light.getBrightnessAt(x, y);
+        if (s <= 0f) {
+            return 0f;
+        }
+        // The mask is only valid inside this light's on-screen square
+        if (hasShadow && x >= sx0 && x <= sx1 && y >= sy0 && y <= sy1) {
+            int shade = maskPx[y * shadowMask.getWidth() + x] & 0xFF;
+            s *= (255 - shade) / 255f;
+        }
+        return s;
+    }
+
+    /**
+     * Lights a LIT blocker evenly with its averaged light, then blends the result toward the original color.
+     * Must run after every light has been added, since it rewrites the light buffers for this area.
+     */
+    private void fillLit(ActiveBlocker b, int width, int height) {
+        Rectangle area = b.bounds.intersection(new Rectangle(0, 0, width, height));
+        if (area.isEmpty()) {
+            return;
+        }
+        float keep = 1f - b.litBlend; // share of the original color
+        for (int y = area.y; y < area.y + area.height; y++) {
+            int row = y * width;
+            for (int x = area.x; x < area.x + area.width; x++) {
+                int i = row + x;
+                redBuf[i]   = keep + b.litBlend * Math.min(1f, redBuf[i]   + b.litRed);
+                greenBuf[i] = keep + b.litBlend * Math.min(1f, greenBuf[i] + b.litGreen);
+                blueBuf[i]  = keep + b.litBlend * Math.min(1f, blueBuf[i]  + b.litBlue);
+            }
+        }
+    }
+
+    public void setLitBlend(float litBlend) {
+        this.litBlend = Math.max(0f, Math.min(1f, litBlend));
+    }
+
+    public float getLitBlend() {
+        return litBlend;
     }
 }

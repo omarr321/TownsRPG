@@ -35,4 +35,16 @@ public class GameSettings {
         return Math.max(1, Math.round(value * getScale()));
     }
 
+    public static int descale(int value) {
+        if (value <= 0) {
+            return value;
+        }
+        float scale = getScale();
+        //Checks for 0 so we don't divide by zero
+        if (scale <= 0) {
+            return value;
+        }
+        return Math.max(1, Math.round(value / scale));
+    }
+
 }

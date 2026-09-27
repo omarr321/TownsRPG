@@ -1,31 +1,29 @@
-package RoomClasses.roomParts;
+package RoomClasses.RoomObjects;
 
 import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.Lighting.LightBlocker;
 import GUI.Lighting.LightPoint;
 import Helper.Point;
-import RoomClasses.RoomObjects.RoomObj;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-public class Wall<T extends RoomObj> extends RoomComponent {
-    private final Map<String, T> roomObjs = new HashMap<>();
+public class BasicObj extends RoomObj{
+    private Point[] shapeCorners;
 
-    public Wall(String imagePath) {
-        super(imagePath);
+    public BasicObj(Point[] shapeCorners, Color color) {
+        super(shapeCorners, color);
+        this.shapeCorners = shapeCorners;
     }
-    public Wall(String imagePath, boolean warped) {
-        super(imagePath, warped);
+    public BasicObj(Point[] shapeCorners, String imagePath) {
+        super(shapeCorners, imagePath);
+        this.shapeCorners = shapeCorners;
     }
-    public Wall(Color color) {
-        super(color);
+    public BasicObj(Point[] shapeCorners, String imagePath, boolean warped) {
+        super(shapeCorners, imagePath, warped);
+        this.shapeCorners = shapeCorners;
     }
 
-    @Override
     public DrawType getType() {
         return this.type;
     }
@@ -51,16 +49,6 @@ public class Wall<T extends RoomObj> extends RoomComponent {
     }
 
     @Override
-    public RoomPart getRoomPart() {
-        return this.roomPart;
-    }
-
-    @Override
-    public void setRoomPart(RoomPart roomPart) {
-        this.roomPart = roomPart;
-    }
-
-    @Override
     public boolean getWarped() {
         return this.warped;
     }
@@ -68,10 +56,7 @@ public class Wall<T extends RoomObj> extends RoomComponent {
     @Override
     public LightBlocker[] convertLightBlockers() {
         ArrayList<LightBlocker> tempArr = new ArrayList<>();
-        this.lightBlockers.forEach((key, value) -> tempArr.add(value));
-        this.roomObjs.forEach((key, value) -> {
-            tempArr.addAll(List.of(value.convertLightBlockers()));
-        });
+        this.lightBlockers.forEach((_, value) -> tempArr.add(value));
         return tempArr.toArray(new LightBlocker[0]);
     }
 
@@ -97,10 +82,7 @@ public class Wall<T extends RoomObj> extends RoomComponent {
     @Override
     public LightPoint[] convertLightPoints() {
         ArrayList<LightPoint> tempArr = new ArrayList<>();
-        this.lightPoints.forEach((key, value) -> tempArr.add(value));
-        this.roomObjs.forEach((key, value) -> {
-            tempArr.addAll(List.of(value.convertLightPoints()));
-        });
+        this.lightPoints.forEach((_, value) -> tempArr.add(value));
         return tempArr.toArray(new LightPoint[0]);
     }
 
@@ -123,31 +105,16 @@ public class Wall<T extends RoomObj> extends RoomComponent {
         return this.lightPoints.get(name);
     }
 
-    public void addRoomObj(String key, T roomObj) {
-        this.roomObjs.put(key, roomObj);
-    }
-
-    public T getRoomObj(String key) {
-        return this.roomObjs.get(key);
-    }
-
-    public QuadrilateralPanel[] putToScreen() {
-        ArrayList<QuadrilateralPanel> qPanel = new ArrayList<>();
-        this.roomObjs.forEach((key, value) -> {
-            QuadrilateralPanel temp;
-            if (value.getType() == RoomComponent.DrawType.IMAGE) {
-                temp = new QuadrilateralPanel(value.getShapeCorners(), value.getImagePath());
-                temp.setImageWarp(value.getWarped());
-            } else {
-                temp = new QuadrilateralPanel(value.getShapeCorners(), value.getColor());
-            }
-            qPanel.add(temp);
-        });
-        return qPanel.toArray(new QuadrilateralPanel[0]);
-    }
-
     @Override
+    public QuadrilateralPanel[] putToScreen() {
+        return new QuadrilateralPanel[0];
+    }
+
     public Point[] getShapeCorners() {
-        return this.shapeCorners;
+        return shapeCorners;
+    }
+
+    public void setShapeCorners(Point[] shapeCorners) {
+        this.shapeCorners = shapeCorners;
     }
 }

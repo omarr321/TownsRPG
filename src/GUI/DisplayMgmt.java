@@ -1,9 +1,6 @@
 package GUI;
 
-import GUI.Lighting.LightLayer;
-import GUI.Lighting.LightMgmt;
-import GUI.Lighting.LightPoint;
-import GUI.Lighting.LightingLayerUI;
+import GUI.Lighting.*;
 import Helper.Point;
 import Helper.QuadShapeDrawer;
 import GUI.CustomPanels.QuadrilateralPanel;
@@ -11,6 +8,7 @@ import GUI.CustomPanels.RectPanel;
 import Helper.FontWrapper;
 import Helper.GameSettings;
 import RoomClasses.Room;
+import RoomClasses.RoomObjects.BasicObj;
 import RoomClasses.roomParts.*;
 
 import javax.swing.*;
@@ -400,19 +398,63 @@ public class DisplayMgmt {
             Floor floor = new Floor("/images/LightTest.png");
             Ceiling ceiling = new Ceiling("/images/LightTest.png");
             Room<RoomComponent> room = new Room<>(floor, ceiling, roomPt);
-            room.setWall(new Wall("/images/LightTest.png"), 0);
-            room.setWall(new Wall("/images/LightTest.png"), 1);
-            room.setWall(new Wall("/images/LightTest.png"), 2);
-            room.setWall(new Wall("/images/LightTest.png"), 3);
+            room.setWall(new Wall<>("/images/LightTest.png"), 0);
+            room.setWall(new Wall<>("/images/LightTest.png"), 1);
+            room.setWall(new Wall<>("/images/LightTest.png"), 2);
+            room.setWall(new Wall<>("/images/LightTest.png"), 3);
             room.setLookingIndex(1);
+
+            QuadShapeDrawer testP = new QuadShapeDrawer(new Point(200, 200));
+            testP.drawLine(0, 100);
+            testP.drawLine(90, 300);
+            testP.drawLine(180, 100);
+            BasicObj testObj = new BasicObj(testP.getPoints(), "sss", false);
+            testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.BLOCK));
+
+            try{
+                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
+                wall.addRoomObj("testObj", testObj);
+            } catch (ClassCastException e) {
+                System.err.println(e);
+            }
+
+            testP = new QuadShapeDrawer(new Point(1000, 400));
+            testP.drawLine(0, 100);
+            testP.drawLine(90, 300);
+            testP.drawLine(180, 100);
+            testObj = new BasicObj(testP.getPoints(), "sss", false);
+            testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.REFLECT));
+            testObj.getLightBlocker("obj").setReflectDist(20);
+
+            try{
+                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
+                wall.addRoomObj("testObj2", testObj);
+            } catch (ClassCastException e) {
+                System.err.println(e);
+            }
+
+            testP = new QuadShapeDrawer(new Point(1200, 500));
+            testP.drawLine(0, 100);
+            testP.drawLine(90, 300);
+            testP.drawLine(180, 100);
+            testObj = new BasicObj(testP.getPoints(), "sss", false);
+            testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.LIT));
+            testObj.getLightBlocker("obj").setLitBlend(.35f);
+
+            try{
+                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
+                wall.addRoomObj("testObj3", testObj);
+            } catch (ClassCastException e) {
+                System.err.println(e);
+            }
 
             Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
             Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
             Point URC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
             Point LRC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
 
-            LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 0, 0, .01f, Color.orange);
-            room.getLookingWall().addLightPoint("oPoint", orangePoint);
+            //LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 0, 0, .01f, Color.orange);
+            //room.getLookingWall().addLightPoint("oPoint", orangePoint);
 
             LightPoint whitePoint = new LightPoint(ULC, LightPoint.LightShape.SQUARE, 400, 0, 0, .6f, Color.blue);
             room.getLookingWall().addLightPoint("wPoint", whitePoint);
@@ -420,7 +462,7 @@ public class DisplayMgmt {
             LightPoint greenPoint = new LightPoint(LLC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, new Color(31, 219, 47));
             room.getLookingWall().addLightPoint("gPoint", greenPoint);
 
-            orangePoint = new LightPoint(URC, LightPoint.LightShape.CIRCLE, 900, 0, 0, .50f, Color.red);
+            LightPoint orangePoint = new LightPoint(URC, LightPoint.LightShape.CIRCLE, 900, 0, 0, .50f, Color.red);
             room.getLookingWall().addLightPoint("rPoint", orangePoint);
 
             whitePoint = new LightPoint(LRC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, Color.blue);

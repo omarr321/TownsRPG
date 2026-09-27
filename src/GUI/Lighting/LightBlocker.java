@@ -1,6 +1,9 @@
 package GUI.Lighting;
 
-import javax.swing.JComponent;
+import Helper.Point;
+import Helper.QuadShapeDrawer;
+import RoomClasses.RoomObjects.BasicObj;
+
 import javax.swing.JPanel;
 import java.awt.Component;
 import java.awt.Rectangle;
@@ -16,6 +19,7 @@ public class LightBlocker extends JPanel {
     private LightTag tag;
     private Component follow;
     private int reflectDist = -1;
+    private float litBlend = -1f;
 
     /**
      * Makes a blocker at a fixed spot.
@@ -48,6 +52,21 @@ public class LightBlocker extends JPanel {
         this(follow, tag);
         setReflectDist(reflectDist);
     }
+    public LightBlocker(Component follow, LightTag tag, float litBlend) {
+        this(follow, tag);
+        setLitBlend(litBlend);
+    }
+
+
+    public LightBlocker(BasicObj follow, LightTag tag) {
+        Point[] points = follow.getShapeCorners();
+        this(points[0].getX(), points[0].getY(), QuadShapeDrawer.calcDist(points[0], points[1]), QuadShapeDrawer.calcDist(points[0], points[3]), tag);
+    }
+
+    public LightBlocker(BasicObj follow, LightTag tag, int reflectDist) {
+        this(follow, tag);
+        setReflectDist(reflectDist);
+    }
 
     public LightTag getTag() {
         return tag;
@@ -72,6 +91,14 @@ public class LightBlocker extends JPanel {
 
     public void setReflectDist(int reflectDist) {
         this.reflectDist = reflectDist > 0 ? reflectDist : -1;
+    }
+
+    public float getLitBlend() {
+        return this.litBlend;
+    }
+
+    public void setLitBlend(float litBlend) {
+        this.litBlend = litBlend < 0f ? -1f : Math.min(1f, litBlend);
     }
 
     /**
@@ -107,7 +134,8 @@ public class LightBlocker extends JPanel {
         /** Stops all light, casting a shadow behind it. */
         BLOCK,
         /** Stops all light like BLOCK, but the lit edges glow outward with some of the light that hit them. */
-        REFLECT
+        REFLECT,
+        LIT
     }
 
 }

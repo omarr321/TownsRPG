@@ -6,14 +6,12 @@ import GUI.CustomPanels.QuadrilateralPanel.PointLocation;
  * This class helps make a 4 point shape by you giving the draw angle and length to get the length.
  */
 public class QuadShapeDrawer {
-    private Point[] points = new Point[4];
-    private Point startingP = new Point(0,0);
+    final private Point[] points = new Point[4];
     private boolean completed = false;
     private int currP = 1;
 
     public  QuadShapeDrawer(Point startP) {
-        this.startingP = startP;
-        points[0] = startingP;
+        this.points[0] = startP;
     }
 
     public static Point calcPoint(Point point, float angle, float dist){
@@ -43,7 +41,12 @@ public class QuadShapeDrawer {
             System.err.println("QuadShapeDrawer does not have a complete shape!");
             return null;
         }
-        return points;
+        Point[] temp = new Point[4];
+        for(int i = 0; i < temp.length; i++) {
+            Point workingP = this.points[i];
+            temp[i] = new Point(GameSettings.scale(workingP.getX()), GameSettings.scale(workingP.getY()));
+        }
+        return temp;
     }
 
     public Point getPoint(PointLocation loc) {
@@ -57,7 +60,7 @@ public class QuadShapeDrawer {
      */
     public void drawLine (float angle, float length) {
         if (!completed) {
-            this.points[currP] = calcPoint(this.points[currP-1], angle, length);;
+            this.points[currP] = calcPoint(this.points[currP-1], angle, length);
             currP++;
 
             if (currP >= 4) {

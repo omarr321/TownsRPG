@@ -13,6 +13,7 @@ import RoomClasses.roomParts.RoomPoints;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Room<T extends RoomComponent>{
     T[] walls = (T[]) new RoomComponent[4];
@@ -156,7 +157,10 @@ public class Room<T extends RoomComponent>{
             panel.add(convertRoomComponent(rc));
         }
 
-        //TODO: Add Objects to display.
+        QuadrilateralPanel[] temp = this.getLookingWall().putToScreen();
+        for(QuadrilateralPanel t : temp) {
+            panel.add(t, 0);
+        }
 
         return panel;
     }
@@ -174,7 +178,7 @@ public class Room<T extends RoomComponent>{
         lightBlockers.add(new LightBlocker(convertRoomComponent(this.getLeftWall()), LightBlocker.LightTag.REFLECT));
         lightBlockers.add(new LightBlocker(convertRoomComponent(this.getRightWall()), LightBlocker.LightTag.REFLECT));
 
-        //TODO: Add Objects Lightblockers if there are any.
+        lightBlockers.addAll(List.of(this.getLookingWall().convertLightBlockers()));
 
         for (LightBlocker lb : lightBlockers) {
             ll.addBlocker(lb);

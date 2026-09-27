@@ -1,7 +1,9 @@
 package RoomClasses.roomParts;
 
+import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.Lighting.LightBlocker;
 import GUI.Lighting.LightPoint;
+import Helper.Point;
 
 import java.awt.*;
 
@@ -100,5 +102,15 @@ public class Floor extends RoomComponent {
     public LightPoint getLightPoint(String name) {
         System.err.println("The floor can not contain lights!");
         return null;
+    }
+
+    @Override
+    public QuadrilateralPanel[] putToScreen() {
+        return new QuadrilateralPanel[0];
+    }
+
+    @Override
+    public Point[] getShapeCorners() {
+        return new Point[0];
     }
 }
