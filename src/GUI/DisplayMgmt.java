@@ -17,6 +17,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Objects;
 
 /**
  * This class handles all the drawing to the screen and user input.
@@ -67,10 +68,10 @@ public class DisplayMgmt {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     String fullscreenOption = (String) fullscreenBox.getSelectedItem();
-                    if (fullscreenOption.equals("Yes")){
+                    if (Objects.equals(fullscreenOption, "Yes")){
                         graphicsBox.setEnabled(false);
                         GameSettings.fullScreen = true;
-                    } else if (fullscreenOption.equals("No")){
+                    } else if (Objects.equals(fullscreenOption, "No")){
                         graphicsBox.setEnabled(true);
                         GameSettings.fullScreen = false;
                     }
@@ -81,7 +82,7 @@ public class DisplayMgmt {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     String resOption = (String) graphicsBox.getSelectedItem();
-                    GameSettings.screenWidth = Integer.parseInt(resOption.split(" X ")[0]);
+                    GameSettings.screenWidth = Integer.parseInt(Objects.requireNonNull(resOption).split(" X ")[0]);
                     GameSettings.screenHeight = Integer.parseInt(resOption.split(" X ")[1]);
                 }
             });
@@ -441,8 +442,8 @@ public class DisplayMgmt {
             LightLayer lightLayer = new LightLayer(GameSettings.screenWidth, GameSettings.screenHeight);
             room.updateLightLayer(lightLayer);
 
-            LightMgmt lightMgmt = new LightMgmt(lightLayer, new Color(80, 100, 180), .35f);
-            lightMgmt.setReflectSpread(75);
+            LightMgmt lightMgmt = new LightMgmt(lightLayer, new Color(80, 100, 180), .15f);
+            lightMgmt.setReflectSpread(80);
             LightingLayerUI lightingUI = new LightingLayerUI(lightMgmt);
             lightingUI.setShowBlockers(showBlockers);
             lightingUI.setShowLights(showLights);
