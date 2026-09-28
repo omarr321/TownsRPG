@@ -1,12 +1,16 @@
 package GUI.Lighting;
 
 import Helper.GameSettings;
+import RoomClasses.RoomObjects.InteractableObj;
 
 import javax.swing.JComponent;
 import javax.swing.JLayer;
 import javax.swing.plaf.LayerUI;
+import java.util.List;
+import Helper.Point;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.function.Supplier;
 
 public class LightingLayerUI extends LayerUI<JComponent> {
 
@@ -14,6 +18,8 @@ public class LightingLayerUI extends LayerUI<JComponent> {
     private BufferedImage image;
     private boolean showBlockers = false;
     private boolean showLights = false;
+    private boolean showInteractable = false;
+    private Supplier<List<InteractableObj>> interactables = List::of;
 
     public LightingLayerUI(LightMgmt lightMgmt) {
         this.lightMgmt = lightMgmt;
@@ -78,12 +84,16 @@ public class LightingLayerUI extends LayerUI<JComponent> {
         // 3. Put the lit image on screen
         g.drawImage(image, 0, 0, null);
 
-        if (showBlockers) {
-            drawBlockerOutlines((Graphics2D) g.create());
+        if (this.showBlockers) {
+            this.drawBlockerOutlines((Graphics2D) g.create());
         }
 
-        if (showLights) {
-            drawLightMarkers((Graphics2D) g.create());
+        if (this.showLights) {
+            this.drawLightMarkers((Graphics2D) g.create());
+        }
+
+        if (this.showInteractable) {
+            this.drawInteractableMarkers((Graphics2D) g.create());
         }
 
     }
@@ -124,5 +134,54 @@ public class LightingLayerUI extends LayerUI<JComponent> {
             g.drawRect(x, y, size - 1, size - 1);
         }
         g.dispose();
+    }
+
+    private void drawInteractableMarkers(Graphics2D g) {
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int spacing = GameSettings.scale(16);                 // gap between stripes
+        Stroke stripeStroke = new BasicStroke(GameSettings.scale(4));
+        Color stripeColor = new Color(255, 220, 0);      // see-through yellow
+
+        float dash = GameSettings.scale(8);
+        Stroke outlineStroke = new BasicStroke(GameSettings.scale(2), BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,
+                10f, new float[]{dash, dash * 0.75f}, 0f);
+
+        for (InteractableObj obj : interactables.get()) {
+            Point[] corners = obj.getShapeCorners();
+            if (corners == null || corners.length < 3) continue;
+
+            Polygon shape = new Polygon();
+            for (Point p : corners) {
+                shape.addPoint(p.getX(), p.getY());
+            }
+
+            // Stripes: only draw inside the shape
+            Shape oldClip = g.getClip();
+            g.clip(shape);
+            g.setColor(stripeColor);
+            g.setStroke(stripeStroke);
+
+            Rectangle b = shape.getBounds();
+            // 45° lines, stepping far enough left and right to cover the whole box
+            for (int i = -b.height; i < b.width; i += spacing) {
+                g.drawLine(b.x + i, b.y + b.height, b.x + i + b.height, b.y);
+            }
+            g.setClip(oldClip);                               // restore so the outline isn't clipped
+
+            // Outline on top
+            g.setColor(Color.YELLOW);
+            g.setStroke(outlineStroke);
+            g.drawPolygon(shape);
+        }
+        g.dispose();
+    }
+
+    public void setShowInteractable(boolean showInteractable) {
+        this.showInteractable = showInteractable;
+    }
+
+    public void setInteractables(Supplier<List<InteractableObj>> interactables) {
+        this.interactables = interactables != null ? interactables : List::of;
     }
 }

@@ -6,9 +6,12 @@ import GUI.Lighting.LightLayer;
 import GUI.Lighting.LightMgmt;
 import GUI.Lighting.LightPoint;
 import Helper.GameSettings;
+import RoomClasses.RoomObjects.InteractableObj;
+import RoomClasses.RoomObjects.RoomObj;
 import RoomClasses.roomParts.RoomComponent;
 import RoomClasses.roomParts.RoomComponent.RoomPart;
 import RoomClasses.roomParts.RoomPoints;
+import RoomClasses.roomParts.Wall;
 
 import javax.swing.*;
 import java.awt.*;
@@ -205,5 +208,17 @@ public class Room<T extends RoomComponent>{
             temp = new QuadrilateralPanel(this.roomPoints.getPartPoints(roomComp.getRoomPart()), roomComp.getColor(), Color.BLACK, GameSettings.scale(3));
         }
         return temp;
+    }
+
+    public List<InteractableObj> getInteractables() {
+        List<InteractableObj> result = new ArrayList<>();
+        if (this.getLookingWall() instanceof Wall<?> wall) {
+            for (RoomObj obj : wall.getRoomObjs()) {
+                if (obj instanceof InteractableObj interactable) {
+                    result.add(interactable);
+                }
+            }
+        }
+        return result;
     }
 }

@@ -7,8 +7,10 @@ import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.CustomPanels.RectPanel;
 import Helper.FontWrapper;
 import Helper.GameSettings;
+import RoomClasses.Interaction;
 import RoomClasses.Room;
 import RoomClasses.RoomObjects.BasicObj;
+import RoomClasses.RoomObjects.InteractableObj;
 import RoomClasses.roomParts.*;
 
 import javax.swing.*;
@@ -157,8 +159,8 @@ public class DisplayMgmt {
             cardContainer.add(createDebugMain(), "DEBUG_MAIN");
             cardContainer.add(createDebugShapes(), "DEBUG_SHAPES");
             cardContainer.add(createDebugRoomTest(), "DEBUG_ROOM_TEST");
-            cardContainer.add(createDebugLightRoomTest(false, false), "DEBUG_ROOM_LIGHT_TEST");
-            cardContainer.add(createDebugLightRoomTest(true, true), "DEBUG_ROOM_BLOCKERS_TEST");
+            cardContainer.add(createDebugLightRoomTest(false, false, false), "DEBUG_ROOM_LIGHT_TEST");
+            cardContainer.add(createDebugLightRoomTest(true, true, true), "DEBUG_ROOM_BLOCKERS_TEST");
 
             setContentPane(cardContainer);
             switchToCard("DEBUG_MAIN");
@@ -383,8 +385,27 @@ public class DisplayMgmt {
 
         private JPanel createDebugRoomTest() {
             Room<RoomComponent> room = createDebugRoom();
+            JPanel roomJ = room.putToScreen();
 
-            return room.putToScreen();
+            MouseAdapter clicking = new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    for (InteractableObj obj : room.getInteractables()) {
+                        Helper.Point[] corners = obj.getShapeCorners();
+                        Polygon shape = new Polygon();
+                        for (Helper.Point p : corners) {
+                            shape.addPoint(p.getX(), p.getY());
+                        }
+                        if (shape.contains(e.getX(), e.getY())) {
+                            obj.trigger();
+                            break; // only trigger the one that was clicked
+                        }
+                    }
+                }
+            };
+            roomJ.addMouseListener(clicking);
+
+            return roomJ;
         }
 
         private Room<RoomComponent> createDebugRoom() {
@@ -448,13 +469,30 @@ public class DisplayMgmt {
                 System.err.println(e);
             }
 
+            testP = new QuadShapeDrawer(new Point(500, 700));
+            testP.drawLine(0, 50);
+            testP.drawLine(90, 50);
+            testP.drawLine(180, 50);
+            InteractableObj testObj1 = new InteractableObj(testP.getPoints(), "sss", false);
+            testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
+            testObj1.getLightBlocker("obj").setReflectDist(75);
+
+            Interaction temp = new Interaction("This is a test", Interaction.InteractionType.DIALOGUE);
+            Interaction temp2 = new Interaction("", Interaction.InteractionType.FLAG);
+            temp.setNextTrigger(temp2);
+            testObj1.setEntryPoint(temp);
+
+            try{
+                Wall<InteractableObj> wall = (Wall<InteractableObj>) room.getLookingWall();
+                wall.addRoomObj("testObj4", testObj1);
+            } catch (ClassCastException e) {
+                System.err.println(e);
+            }
+
             Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
             Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
             Point URC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
             Point LRC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
-
-            //LightPoint orangePoint = new LightPoint(new Point(GameSettings.screenWidth/2, GameSettings.screenHeight/2), LightPoint.LightShape.CIRCLE, 600, 0, 0, .01f, Color.orange);
-            //room.getLookingWall().addLightPoint("oPoint", orangePoint);
 
             LightPoint whitePoint = new LightPoint(ULC, LightPoint.LightShape.SQUARE, 400, 0, 0, .6f, Color.blue);
             room.getLookingWall().addLightPoint("wPoint", whitePoint);
@@ -474,7 +512,7 @@ public class DisplayMgmt {
             return room;
         }
 
-        private JPanel createDebugLightRoomTest(boolean showBlockers, boolean showLights) {
+        private JPanel createDebugLightRoomTest(boolean showBlockers, boolean showLights, boolean showInteractable) {
             JPanel litPanel = new JPanel(new BorderLayout());
 
             //1 - Creates the debug room.
@@ -493,6 +531,8 @@ public class DisplayMgmt {
             LightingLayerUI lightingUI = new LightingLayerUI(lightMgmt);
             lightingUI.setShowBlockers(showBlockers);
             lightingUI.setShowLights(showLights);
+            lightingUI.setShowInteractable(showInteractable);
+            lightingUI.setInteractables(room::getInteractables);
 
             //5 - Creating the graphics for the room and applying the lightUI to it.
             JPanel roomPanel = room.putToScreen();
@@ -530,6 +570,21 @@ public class DisplayMgmt {
                     mouseLight.getLoc().setX(free.getX());
                     mouseLight.getLoc().setY(free.getY());
                     litLayer.repaint();
+                }
+
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    for (InteractableObj obj : room.getInteractables()) {
+                        Helper.Point[] corners = obj.getShapeCorners();
+                        Polygon shape = new Polygon();
+                        for (Helper.Point p : corners) {
+                            shape.addPoint(p.getX(), p.getY());
+                        }
+                        if (shape.contains(e.getX(), e.getY())) {
+                            obj.trigger();
+                            break; // only trigger the one that was clicked
+                        }
+                    }
                 }
             };
 

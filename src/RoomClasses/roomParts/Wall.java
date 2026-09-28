@@ -124,11 +124,16 @@ public class Wall<T extends RoomObj> extends RoomComponent {
     }
 
     public void addRoomObj(String key, T roomObj) {
+        //System.out.println("Adding " + key + " with value " + roomObj);
         this.roomObjs.put(key, roomObj);
     }
 
     public T getRoomObj(String key) {
         return this.roomObjs.get(key);
+    }
+
+    public List<T> getRoomObjs() {
+        return new ArrayList<>(this.roomObjs.values());
     }
 
     public QuadrilateralPanel[] putToScreen() {
