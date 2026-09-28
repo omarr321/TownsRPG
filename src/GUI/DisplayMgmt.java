@@ -161,6 +161,8 @@ public class DisplayMgmt {
             cardContainer.add(createDebugRoomTest(), "DEBUG_ROOM_TEST");
             cardContainer.add(createDebugLightRoomTest(false, false, false), "DEBUG_ROOM_LIGHT_TEST");
             cardContainer.add(createDebugLightRoomTest(true, true, true), "DEBUG_ROOM_BLOCKERS_TEST");
+            cardContainer.add(createBasicRoom(false, false, false), "BASIC_ROOM_TEST");
+            cardContainer.add(createBasicRoom(true, true, true), "BASIC_ROOM_DEBUG_TEST");
 
             setContentPane(cardContainer);
             switchToCard("DEBUG_MAIN");
@@ -191,6 +193,10 @@ public class DisplayMgmt {
                         switchToCard("DEBUG_ROOM_BLOCKERS_TEST");
                     } else if (currentCard.equals("DEBUG_ROOM_BLOCKERS_TEST")) {
                         switchToCard("DEBUG_ROOM_TEST");
+                    } else if (currentCard.equals("BASIC_ROOM_TEST")) {
+                        switchToCard("BASIC_ROOM_DEBUG_TEST");
+                    } else if (currentCard.equals("BASIC_ROOM_DEBUG_TEST")) {
+                        switchToCard("BASIC_ROOM_TEST");
                     }
                 }
             });
@@ -234,6 +240,16 @@ public class DisplayMgmt {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     switchToCard("DEBUG_ROOM_TEST");
+                }
+            });
+            panel.add(squaresButt);
+
+            squaresButt = new JButton("Basic Room Test");
+            squaresButt.setFont(custFont);
+            squaresButt.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    switchToCard("BASIC_ROOM_TEST");
                 }
             });
             panel.add(squaresButt);
@@ -510,6 +526,221 @@ public class DisplayMgmt {
             room.getLookingWall().addLightPoint("mouseLight", mouseLight);
 
             return room;
+        }
+
+        private Room<RoomComponent> createBasicRoom() {
+            final double WALL_RATIO = 1.5/3.0;
+            final double SC_PERCENT = 0.85;
+            final int SC_ANGLE = 30;
+            final int OFFSCREEN_MULI = 4;
+
+            RoomPoints roomPt = new RoomPoints(WALL_RATIO, SC_PERCENT, SC_ANGLE, OFFSCREEN_MULI);
+
+            Floor floor = new Floor("/images/WoodFloor.png");
+            Ceiling ceiling = new Ceiling("/images/WoodFloor.png");
+            Room<RoomComponent> room = new Room<>(floor, ceiling, roomPt);
+            room.setWall(new Wall<>("/images/BrickWall.png"), 0);
+            room.setWall(new Wall<>("/images/BrickWall.png"), 1);
+            room.setWall(new Wall<>("/images/BrickWall.png"), 2);
+            room.setWall(new Wall<>("/images/BrickWall.png"), 3);
+            room.setLookingIndex(1);
+
+            QuadShapeDrawer testP = new QuadShapeDrawer(new Point(200, 200));
+            testP.drawLine(0, 100);
+            testP.drawLine(90, 300);
+            testP.drawLine(180, 100);
+            BasicObj testObj = new BasicObj(testP.getPoints(), "/images/Crate.png", false);
+            testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.BLOCK));
+
+            try{
+                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
+                wall.addRoomObj("testObj", testObj);
+            } catch (ClassCastException e) {
+                System.err.println(e);
+            }
+
+            testP = new QuadShapeDrawer(new Point(1000, 400));
+            testP.drawLine(0, 100);
+            testP.drawLine(90, 300);
+            testP.drawLine(180, 100);
+            testObj = new BasicObj(testP.getPoints(), "/images/LampTransparent.png", false);
+            testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.LIT));
+            testObj.getLightBlocker("obj").setReflectDist(20);
+
+            try{
+                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
+                wall.addRoomObj("testObj2", testObj);
+            } catch (ClassCastException e) {
+                System.err.println(e);
+            }
+
+            testP = new QuadShapeDrawer(new Point(1200, 500));
+            testP.drawLine(0, 100);
+            testP.drawLine(90, 300);
+            testP.drawLine(180, 100);
+            testObj = new BasicObj(testP.getPoints(), "/images/Crate.png", false);
+            testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.LIT));
+            testObj.getLightBlocker("obj").setLitBlend(.35f);
+
+            try{
+                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
+                wall.addRoomObj("testObj3", testObj);
+            } catch (ClassCastException e) {
+                System.err.println(e);
+            }
+
+            testP = new QuadShapeDrawer(new Point(500, 700));
+            testP.drawLine(0, 50);
+            testP.drawLine(90, 50);
+            testP.drawLine(180, 50);
+            InteractableObj testObj1 = new InteractableObj(testP.getPoints(), "/images/Crate.png", false);
+            testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
+            testObj1.getLightBlocker("obj").setReflectDist(75);
+
+            Interaction temp = new Interaction("This is a test", Interaction.InteractionType.DIALOGUE);
+            Interaction temp2 = new Interaction("", Interaction.InteractionType.FLAG);
+            temp.setNextTrigger(temp2);
+            testObj1.setEntryPoint(temp);
+
+            try{
+                Wall<InteractableObj> wall = (Wall<InteractableObj>) room.getLookingWall();
+                wall.addRoomObj("testObj4", testObj1);
+            } catch (ClassCastException e) {
+                System.err.println(e);
+            }
+
+            Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
+            Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
+            Point URC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
+            Point LRC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
+
+            LightPoint whitePoint = new LightPoint(ULC, LightPoint.LightShape.SQUARE, 400, 0, 0, .6f, Color.blue);
+            room.getLookingWall().addLightPoint("wPoint", whitePoint);
+
+            LightPoint greenPoint = new LightPoint(LLC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, new Color(31, 219, 47));
+            room.getLookingWall().addLightPoint("gPoint", greenPoint);
+
+            LightPoint orangePoint = new LightPoint(URC, LightPoint.LightShape.CIRCLE, 900, 0, 0, .50f, Color.red);
+            room.getLookingWall().addLightPoint("rPoint", orangePoint);
+
+            whitePoint = new LightPoint(LRC, LightPoint.LightShape.SQUARE, 400, 0, 0, .4f, Color.blue);
+            room.getLookingWall().addLightPoint("bPoint", whitePoint);
+
+            LightPoint mouseLight = new LightPoint(new Point(0, 0), LightPoint.LightShape.CIRCLE, 100, 0, 0, .5f, Color.white);
+            room.getLookingWall().addLightPoint("mouseLight", mouseLight);
+
+            return room;
+        }
+
+        private JPanel createBasicRoom(boolean showBlockers, boolean showLights, boolean showInteractable) {
+            JPanel litPanel = new JPanel(new BorderLayout());
+
+            //1 - Creates the debug room.
+            Room<RoomComponent> room = createBasicRoom();
+
+            //2 - Creates the lightLayer and passes it to the room so it can add its LightBlockers
+            LightLayer lightLayer = new LightLayer(GameSettings.screenWidth, GameSettings.screenHeight);
+            room.updateLightLayer(lightLayer);
+
+            //3 - Creates the lightMgmt and passes it to the room so it can add its Light Points
+            LightMgmt lightMgmt = new LightMgmt(lightLayer, new Color(80, 100, 180), .55f);
+            lightMgmt.setReflectSpread(80);
+            room.updateLightMgmt(lightMgmt);
+
+            //4 - Creating the light UI and passing in the LightMgmt
+            LightingLayerUI lightingUI = new LightingLayerUI(lightMgmt);
+            lightingUI.setShowBlockers(showBlockers);
+            lightingUI.setShowLights(showLights);
+            lightingUI.setShowInteractable(showInteractable);
+            lightingUI.setInteractables(room::getInteractables);
+
+            //5 - Creating the graphics for the room and applying the lightUI to it.
+            JPanel roomPanel = room.putToScreen();
+            JLayer<JComponent> litLayer = new JLayer<>(roomPanel, lightingUI);
+
+
+
+            MouseAdapter followMouse = new MouseAdapter() {
+                private final LightPoint mouseLight = room.getLookingWall().getLightPoint("mouseLight");
+                @Override
+                public void mouseMoved(MouseEvent e) { moveLight(e); }
+
+                @Override
+                public void mouseDragged(MouseEvent e) { moveLight(e); }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    if (!lightMgmt.getLights().contains(mouseLight)) {
+                        lightMgmt.addLight(mouseLight);
+                    }
+                    moveLight(e);
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    lightMgmt.removeLight(mouseLight); // turn the light off when the mouse leaves
+                    litLayer.repaint();
+                }
+
+                private void moveLight(MouseEvent e) {
+                    Point free = lightLayer.nearestFreePoint(e.getX(), e.getY(), roomPanel.getWidth(), roomPanel.getHeight());
+                    if (free == null) {
+                        return; // nowhere free to put it
+                    }
+                    mouseLight.getLoc().setX(free.getX());
+                    mouseLight.getLoc().setY(free.getY());
+                    litLayer.repaint();
+                }
+
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    for (InteractableObj obj : room.getInteractables()) {
+                        Helper.Point[] corners = obj.getShapeCorners();
+                        Polygon shape = new Polygon();
+                        for (Helper.Point p : corners) {
+                            shape.addPoint(p.getX(), p.getY());
+                        }
+                        if (shape.contains(e.getX(), e.getY())) {
+                            obj.trigger();
+                            break; // only trigger the one that was clicked
+                        }
+                    }
+                }
+            };
+
+            roomPanel.addMouseListener(followMouse);
+            roomPanel.addMouseMotionListener(followMouse);
+
+            // Place the light at the mouse as soon as this panel shows up, even if the mouse hasn't moved
+            roomPanel.addHierarchyListener(new HierarchyListener() {
+                private final LightPoint mouseLight = room.getLookingWall().getLightPoint("mouseLight");
+                @Override
+                public void hierarchyChanged(HierarchyEvent e) {
+                    if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) == 0 || !roomPanel.isShowing()) {
+                        return;
+                    }
+                    PointerInfo pointer = MouseInfo.getPointerInfo();
+                    if (pointer == null) {
+                        return; // no mouse available
+                    }
+                    java.awt.Point mouse = pointer.getLocation();              // screen coordinates
+                    SwingUtilities.convertPointFromScreen(mouse, roomPanel);   // now panel coordinates
+
+                    if (roomPanel.contains(mouse)) {
+                        mouseLight.getLoc().setX(mouse.x);
+                        mouseLight.getLoc().setY(mouse.y);
+                        if (!lightMgmt.getLights().contains(mouseLight)) {
+                            lightMgmt.addLight(mouseLight);
+                        }
+                    } else {
+                        lightMgmt.removeLight(mouseLight); // mouse is outside, so no light yet
+                    }
+                    litLayer.repaint();
+                }
+            });
+
+            litPanel.add(litLayer, BorderLayout.CENTER);
+            return litPanel;
         }
 
         private JPanel createDebugLightRoomTest(boolean showBlockers, boolean showLights, boolean showInteractable) {
