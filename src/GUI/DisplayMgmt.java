@@ -589,6 +589,7 @@ public class DisplayMgmt {
                 System.err.println(e);
             }
 
+
             testP = new QuadShapeDrawer(new Point(500, 700));
             testP.drawLine(0, 50);
             testP.drawLine(90, 50);
