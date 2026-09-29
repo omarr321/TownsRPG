@@ -1,5 +1,7 @@
 package GUI;
 
+import Engine.Interactions.Interactable;
+import Engine.Player;
 import GUI.Lighting.*;
 import Helper.Point;
 import Helper.QuadShapeDrawer;
@@ -23,7 +25,6 @@ import java.util.Objects;
  * This class handles all the drawing to the screen and user input.
  */
 public class DisplayMgmt {
-
     private static final FontWrapper tuffyBold = new FontWrapper("/fonts/Tuffy_Bold.ttf", "Tuffy Bold");
     private static final FontWrapper tuffyPlain = new FontWrapper("/fonts/Tuffy.ttf","Tuffy Plain");
     /**
@@ -135,6 +136,7 @@ public class DisplayMgmt {
         private final CardLayout cardLayout;
         private final JPanel cardContainer;
         private String currentCard = "";
+        private final Player player = new Player("Debug User");
 
         public DebugWindow() {
             setTitle("Debug");
@@ -493,8 +495,8 @@ public class DisplayMgmt {
             testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
             testObj1.getLightBlocker("obj").setReflectDist(75);
 
-            FlagInteraction temp = new FlagInteraction("This is a test", FlagInteraction.InteractionType.DIALOGUE);
-            FlagInteraction temp2 = new FlagInteraction("", FlagInteraction.InteractionType.FLAG);
+            FlagInteraction temp = new FlagInteraction("This is a test", this.player, "DEBUG_ROOM_1");
+            FlagInteraction temp2 = new FlagInteraction("Second test!", this.player, "DEBUG_ROOM_2");
             temp.setNextTrigger(temp2);
             testObj1.setEntryPoint(temp);
 
@@ -597,8 +599,8 @@ public class DisplayMgmt {
             testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
             testObj1.getLightBlocker("obj").setReflectDist(75);
 
-            FlagInteraction temp = new FlagInteraction("This is a test", FlagInteraction.InteractionType.DIALOGUE);
-            FlagInteraction temp2 = new FlagInteraction("", FlagInteraction.InteractionType.FLAG);
+            FlagInteraction temp = new FlagInteraction("This is a box.", "... Still a box.", this.player, "BASIC_ROOM_1");
+            FlagInteraction temp2 = new FlagInteraction("The box is made of wood.", "I think it might... be... maple.", this.player, "BASIC_ROOM_2");
             temp.setNextTrigger(temp2);
             testObj1.setEntryPoint(temp);
 

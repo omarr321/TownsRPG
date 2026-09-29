@@ -1,8 +1,8 @@
 package Engine.Interactions;
 
 public abstract class Interactable {
-    private String message;
-    private FlagInteraction nextTrigger = null;
+    protected String message;
+    protected Interactable nextTrigger = null;
 
     public Interactable(String message) {
         this.message = message;
@@ -11,11 +11,12 @@ public abstract class Interactable {
     public void setMessage(String message) {
         this.message = message;
     }
+
     public String getMessage() {
         return this.message;
     }
 
-    public void setNextTrigger(FlagInteraction i) {
+    public void setNextTrigger(Interactable i) {
         this.nextTrigger = i;
     }
 

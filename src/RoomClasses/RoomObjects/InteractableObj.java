@@ -5,8 +5,8 @@ import Helper.Point;
 
 import java.awt.*;
 
-public class InteractableObj<T extends Interactable> extends BasicObj{
-    private T entryPoint = null;
+public class InteractableObj extends BasicObj{
+    private Interactable entryPoint = null;
 
     public InteractableObj(Point[] shapeCorners, Color color) {
         super(shapeCorners, color);
@@ -18,7 +18,7 @@ public class InteractableObj<T extends Interactable> extends BasicObj{
         super(shapeCorners, imagePath, warped);
     }
 
-    public void setEntryPoint(T entryPoint) {
+    public void setEntryPoint(Interactable entryPoint) {
         this.entryPoint = entryPoint;
     }
 
