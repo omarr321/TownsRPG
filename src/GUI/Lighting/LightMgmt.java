@@ -3,20 +3,23 @@ package GUI.Lighting;
 import Helper.GameSettings;
 import Helper.Point;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Area;
-import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferInt;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * Holds every light in a scene plus the scene's ambient light,
  * and works out what color things should be once lit.
+ * <p>
+ * Blockers affect light pixel by pixel, using the alpha of what they follow: fully transparent pixels let
+ * all light through, fully opaque pixels stop it, and semi-transparent pixels let part of it through
+ * (alpha 0.25 stops a quarter). Light is worked out outward from each light, one ring of pixels at a time,
+ * so each pixel knows how much light made it past everything between it and the light.
+ * </p>
  */
 public class LightMgmt {
     private final List<LightPoint> lights = new ArrayList<>();
@@ -34,18 +37,45 @@ public class LightMgmt {
     // Default distance (pixels) light tapers into a REFLECT blocker that has no distance of its own
     private int reflectSpread = 50;
 
+    // LIT blockers: how much of the averaged light they get
+    private float litBlend = 0.3f;
+
     // Per-pixel light totals used by applyTo, reused between frames
     private float[] redBuf;
     private float[] greenBuf;
     private float[] blueBuf;
 
-    // Shadow mask for the light currently being worked on: 0 = lit, 255 = fully in shadow
-    private BufferedImage shadowMask;
-    private byte[] maskPx;
-    private float[] reflectBuf;
+    // Blocker opacity, screen sized. Stamped once per frame (frame*), or per light into scratch (light*)
+    // when a light sits inside a blocker and that blocker has to be left out. cur* point at the ones in use.
+    private float[] frameOther, frameRef, frameTaper;
+    private int[] frameLit;
+    private float[] lightOther, lightRef, lightTaper;
+    private int[] lightLit;
+    private float[] opOther;   // opacity of BLOCK and LIT blockers at each pixel (0..1)
+    private float[] opRef;     // opacity of REFLECT blockers at each pixel (0..1)
+    private float[] taperBuf;  // reflect distance of the REFLECT blocker at each pixel
+    private int[] litIdBuf;    // which LIT blocker covers each pixel (index into frameBlockers), -1 for none
 
-    // LIT blockers: how much of the averaged light they get, and the most they can get
-    private float litBlend = 0.3f;
+    // Per-light working buffers, screen sized. Only the part around the current light is used.
+    private float[] tout;      // share of the light that carries on past each pixel
+    private float[] lout;      // light strength carrying on past each pixel (brightness * tout)
+    private float[] entryBuf;  // REFLECT: light strength where the ray went into reflect material
+    private float[] depthBuf;  // REFLECT: how far the ray has travelled inside reflect material
+
+    // This frame's blockers; litIdBuf holds indexes into this
+    private ActiveBlocker[] frameBlockers = new ActiveBlocker[0];
+
+    // Alpha byte (0..255) -> opacity (0..1)
+    private static final float[] ALPHA = new float[256];
+    static {
+        for (int i = 0; i < 256; i++) {
+            ALPHA[i] = i / 255f;
+        }
+    }
+
+    // LIT face totals are kept separately for each part of a light worked on at the same time:
+    // slots 0-3 are the four quarters around the light, slot 4 is the light's own row and column.
+    private static final int SLOTS = 5;
 
     public LightMgmt(Color ambientColor, float ambientIntensity) {
         setAmbient(ambientColor, ambientIntensity);
@@ -141,34 +171,62 @@ public class LightMgmt {
         return reflectSpread;
     }
 
-    /** One active blocker for this frame: where it is, whether it reflects, and how far its taper goes. */
+    public void setLitBlend(float litBlend) {
+        this.litBlend = Math.max(0f, Math.min(1f, litBlend));
+    }
+
+    public float getLitBlend() {
+        return litBlend;
+    }
+
+    /** One active blocker for this frame: where it is, its alpha, and what it does to light. */
     private static final class ActiveBlocker {
+        final int index;
         final Rectangle bounds;
         final boolean reflect;
         final boolean lit;
         final int reflectDist;
         final float litBlend;
 
+        Rectangle area;   // the on-screen part of bounds
+        int[] spritePx;   // ARGB pixels covering area, or null if the whole box is solid
+
+        // LIT: light collected on its faces, per light (one total per slot) and overall
+        final float[] faceSum = new float[SLOTS];
+        final int[] faceCount = new int[SLOTS];
         float litRed, litGreen, litBlue;
 
-        ActiveBlocker(Rectangle bounds, boolean reflect, boolean lit, int reflectDist, float litBlend) {
+        ActiveBlocker(int index, Rectangle bounds, boolean reflect, boolean lit, int reflectDist, float litBlend) {
+            this.index = index;
             this.bounds = bounds;
             this.reflect = reflect;
-            this.reflectDist = reflectDist;
             this.lit = lit;
+            this.reflectDist = reflectDist;
             this.litBlend = litBlend;
+        }
+
+        /** How opaque this blocker is at a pixel, 0..1. Off-screen parts of its box count as fully opaque. */
+        float alphaAt(int x, int y) {
+            if (!bounds.contains(x, y)) {
+                return 0f;
+            }
+            if (spritePx == null || !area.contains(x, y)) {
+                return 1f;
+            }
+            return (spritePx[(y - area.y) * area.width + (x - area.x)] >>> 24) / 255f;
         }
     }
 
     /**
-     * Finds every active blocker in the light layer.
+     * Finds every active blocker in the light layer and grabs the alpha of what it follows.
      * Rectangles are in the drawn layer's coordinates, which are the same as the lit image's.
      */
-    private List<ActiveBlocker> collectBlockers() {
+    private List<ActiveBlocker> collectBlockers(int width, int height) {
         List<ActiveBlocker> result = new ArrayList<>();
         if (lightLayer == null) {
             return result;
         }
+        Rectangle screen = new Rectangle(0, 0, width, height);
         for (LightBlocker blocker : lightLayer.getBlockers()) {
             if (!blocker.isActive()) {
                 continue;
@@ -176,34 +234,30 @@ public class LightMgmt {
             boolean reflect = blocker.getTag() == LightBlocker.LightTag.REFLECT;
             boolean lit = blocker.getTag() == LightBlocker.LightTag.LIT;
             int baseDist = blocker.getReflectDist() > 0 ? blocker.getReflectDist() : reflectSpread;
-            int dist = GameSettings.scale(baseDist); // reference pixels -> screen pixels
+            int dist = Math.max(1, GameSettings.scale(baseDist)); // reference pixels -> screen pixels
             float blend = blocker.getLitBlend() >= 0f ? blocker.getLitBlend() : litBlend;
-            result.add(new ActiveBlocker(blocker.getLightBounds(), reflect, lit, dist, blend));
+
+            Rectangle bounds = blocker.getLightBounds();
+            ActiveBlocker b = new ActiveBlocker(result.size(), bounds, reflect, lit, dist, blend);
+
+            Rectangle area = bounds.intersection(screen);
+            if (area.isEmpty()) {
+                b.area = new Rectangle(bounds.x, bounds.y, 0, 0);
+            } else {
+                b.area = area;
+                BufferedImage sprite = blocker.getAlphaImage(area);
+                if (sprite != null) {
+                    b.spritePx = ((DataBufferInt) sprite.getRaster().getDataBuffer()).getData();
+                }
+            }
+            result.add(b);
         }
         return result;
     }
 
-    /**
-     * Finds every active blocker in the light layer.
-     * Rectangles are in the drawn layer's coordinates, which are the same as the lit image's.
-     */
-    private void collectBlockers(List<Rectangle> blockers, List<Boolean> reflects, List<Boolean> lits) {
-        if (lightLayer == null) {
-            return;
-        }
-        for (LightBlocker blocker : lightLayer.getBlockers()) {
-            if (!blocker.isActive()) {
-                continue;
-            }
-            blockers.add(blocker.getLightBounds());
-            reflects.add(blocker.getTag() == LightBlocker.LightTag.REFLECT);
-            lits.add(blocker.getTag() == LightBlocker.LightTag.LIT);
-        }
-    }
-
     // ---------------------------------------------------------------
     // Single point: give it a point and a color, get the lit color back
-    // (does not account for shadows or reflections)
+    // (does not account for blockers)
     // ---------------------------------------------------------------
     public Color getLitColor(Point point, Color baseColor) {
         int x = point.getX();
@@ -249,473 +303,404 @@ public class LightMgmt {
         int width = image.getWidth();
         int height = image.getHeight();
         int size = width * height;
+        int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
 
-        if (redBuf == null || redBuf.length != size) {
-            redBuf = new float[size];
-            greenBuf = new float[size];
-            blueBuf = new float[size];
-            reflectBuf = new float[size];
-        }
+        ensureBuffers(size);
 
         // 1. Every pixel starts with the ambient light
         Arrays.fill(redBuf, ambientRed);
         Arrays.fill(greenBuf, ambientGreen);
         Arrays.fill(blueBuf, ambientBlue);
 
-        // Everything in the blocker panel that stops light this frame
-        List<ActiveBlocker> blockers = collectBlockers();
+        // Everything in the blocker panel that affects light this frame, and its opacity (same for every light)
+        List<ActiveBlocker> blockers = collectBlockers(width, height);
+        frameBlockers = blockers.toArray(new ActiveBlocker[0]);
+        stampBlockers(blockers, 0, 0, width - 1, height - 1, width,
+                frameOther, frameRef, frameTaper, frameLit);
 
-        if (!blockers.isEmpty() &&
-                (shadowMask == null || shadowMask.getWidth() != width || shadowMask.getHeight() != height)) {
-            shadowMask = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-            maskPx = ((DataBufferByte) shadowMask.getRaster().getDataBuffer()).getData();
-        }
-
-        // 2. Add each light, only inside the square it can reach
+        // 2. Add each light
         for (LightPoint light : lights) {
             int cx = light.getLoc().getX();
             int cy = light.getLoc().getY();
             int dist = light.getDist();
-            int x0 = Math.max(0, cx - dist);
-            int y0 = Math.max(0, cy - dist);
-            int x1 = Math.min(width - 1, cx + dist);
-            int y1 = Math.min(height - 1, cy + dist);
-
-            // Blockers this light can reach. A blocker the light sits inside is ignored,
-            // otherwise the light would be completely smothered.
             Rectangle reach = new Rectangle(cx - dist, cy - dist, dist * 2 + 1, dist * 2 + 1);
-            List<ActiveBlocker> active = new ArrayList<>();
-            List<Rectangle> activeRects = new ArrayList<>();
-            List<ActiveBlocker> activeReflectors = new ArrayList<>();
-            List<ActiveBlocker> activeLit = new ArrayList<>();
+
+            // A blocker the light sits on (non-transparent pixel) is left out, otherwise the light would be smothered
+            List<ActiveBlocker> excluded = new ArrayList<>();
             for (ActiveBlocker b : blockers) {
-                // A reflector's taper can reach past the light's square, so grow the check for it
-                Rectangle check = b.reflect ? grow(reach, b.reflectDist) : reach;
-                if (!b.bounds.intersects(check) || containsInclusive(b.bounds, cx, cy)) {
+                if (b.alphaAt(cx, cy) > 0f) {
+                    excluded.add(b);
+                }
+            }
+
+            // A REFLECT taper can carry light past the light's own reach, so work out how far to go
+            int maxTaper = 0;
+            for (ActiveBlocker b : blockers) {
+                if (b.reflect && !excluded.contains(b) && b.bounds.intersects(grow(reach, b.reflectDist))) {
+                    maxTaper = Math.max(maxTaper, b.reflectDist);
+                }
+            }
+            int range = dist + maxTaper;
+
+            int x0 = Math.max(0, cx - range);
+            int y0 = Math.max(0, cy - range);
+            int x1 = Math.min(width - 1, cx + range);
+            int y1 = Math.min(height - 1, cy + range);
+            if (x0 > x1 || y0 > y1) {
+                continue; // nothing of this light is on screen
+            }
+
+            if (excluded.isEmpty()) {
+                // Usual case: the frame's opacity works as it is
+                opOther = frameOther;
+                opRef = frameRef;
+                taperBuf = frameTaper;
+                litIdBuf = frameLit;
+            } else {
+                // Redo the opacity around this light without the blockers it sits in
+                List<ActiveBlocker> kept = new ArrayList<>(blockers);
+                kept.removeAll(excluded);
+                stampBlockers(kept, x0, y0, x1, y1, width, lightOther, lightRef, lightTaper, lightLit);
+                opOther = lightOther;
+                opRef = lightRef;
+                taperBuf = lightTaper;
+                litIdBuf = lightLit;
+            }
+
+            for (ActiveBlocker b : blockers) {
+                if (b.lit) {
+                    Arrays.fill(b.faceSum, 0f);
+                    Arrays.fill(b.faceCount, 0);
+                }
+            }
+
+            castLight(light, cx, cy, range, x0, y0, x1, y1, width);
+
+            // LIT blockers get the average light that reached their faces
+            for (ActiveBlocker b : blockers) {
+                if (!b.lit) {
                     continue;
                 }
-                active.add(b);
-                if (b.bounds.intersects(reach)) {
-                    activeRects.add(b.bounds);
+                float sum = 0f;
+                int count = 0;
+                for (int slot = 0; slot < SLOTS; slot++) {
+                    sum += b.faceSum[slot];
+                    count += b.faceCount[slot];
                 }
-                if (b.reflect) {
-                    activeReflectors.add(b);
-                }
-                if (b.lit) {
-                    activeLit.add(b);
-                }
-            }
-
-            boolean onScreen = x0 <= x1 && y0 <= y1;
-            boolean hasShadow = onScreen && !activeRects.isEmpty() && buildShadowMask(light, activeRects, x0, y0, x1, y1);
-
-            // Direct light
-            if (onScreen) {
-                for (int y = y0; y <= y1; y++) {
-                    int row = y * width;
-                    for (int x = x0; x <= x1; x++) {
-                        float strength = light.getBrightnessAt(x, y);
-                        if (strength <= 0f) {
-                            continue;
-                        }
-                        int i = row + x;
-                        if (hasShadow) {
-                            int shade = maskPx[i] & 0xFF;
-                            if (shade == 255) {
-                                continue; // fully in shadow
-                            }
-                            strength *= (255 - shade) / 255f; // soft shadow edge
-                        }
-
-                        redBuf[i] += strength * light.getRed();
-                        greenBuf[i] += strength * light.getGreen();
-                        blueBuf[i] += strength * light.getBlue();
-                    }
-                }
-            }
-
-            // Light tapering into REFLECT blockers from their lit edges
-            List<Rectangle> taperAreas = new ArrayList<>();
-            for (ActiveBlocker r : activeReflectors) {
-                addReflection(light, r, active, hasShadow, x0, y0, x1, y1, width, height, taperAreas);
-            }
-            for (Rectangle area : taperAreas) {
-                flushReflection(light, area, width);
-            }
-            for (ActiveBlocker b : activeLit) {
-                float avg = averageFaceLight(light, b.bounds, hasShadow, x0, y0, x1, y1, width, height);
-                if (avg > 0f) {
-                    b.litRed   += avg * light.getRed();
+                if (count > 0) {
+                    float avg = sum / count;
+                    b.litRed += avg * light.getRed();
                     b.litGreen += avg * light.getGreen();
-                    b.litBlue  += avg * light.getBlue();
+                    b.litBlue += avg * light.getBlue();
                 }
             }
         }
 
         for (ActiveBlocker b : blockers) {
             if (b.lit) {
-                fillLit(b, width, height);
+                fillLit(b, width);
             }
         }
 
-        // 3. Multiply every pixel's color by the light that reached it
-        int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
-        for (int i = 0; i < size; i++) {
-            int p = pixels[i];
-            int alpha = p & 0xFF000000;
-            int red = (p >> 16) & 0xFF;
-            int green = (p >> 8) & 0xFF;
-            int blue = p & 0xFF;
+        // 3. Multiply every pixel's color by the light that reached it (rows split across cores)
+        IntStream.range(0, height).parallel().forEach(y -> {
+            int end = (y + 1) * width;
+            for (int i = y * width; i < end; i++) {
+                int p = pixels[i];
+                int alpha = p & 0xFF000000;
+                int red = lightChannel((p >> 16) & 0xFF, redBuf[i]);
+                int green = lightChannel((p >> 8) & 0xFF, greenBuf[i]);
+                int blue = lightChannel(p & 0xFF, blueBuf[i]);
+                pixels[i] = alpha | (red << 16) | (green << 8) | blue;
+            }
+        });
+    }
 
-            red = lightChannel(red, redBuf[i]);
-            green = lightChannel(green, greenBuf[i]);
-            blue = lightChannel(blue, blueBuf[i]);
-
-            pixels[i] = alpha | (red << 16) | (green << 8) | blue;
+    private void ensureBuffers(int size) {
+        if (redBuf != null && redBuf.length == size) {
+            return;
         }
+        redBuf = new float[size];
+        greenBuf = new float[size];
+        blueBuf = new float[size];
+        frameOther = new float[size];
+        frameRef = new float[size];
+        frameTaper = new float[size];
+        frameLit = new int[size];
+        lightOther = new float[size];
+        lightRef = new float[size];
+        lightTaper = new float[size];
+        lightLit = new int[size];
+        tout = new float[size];
+        lout = new float[size];
+        entryBuf = new float[size];
+        depthBuf = new float[size];
     }
 
     private static Rectangle grow(Rectangle r, int amount) {
         return new Rectangle(r.x - amount, r.y - amount, r.width + amount * 2, r.height + amount * 2);
     }
 
-    /** Like Rectangle.contains, but counts points sitting exactly on the edge. */
-    private static boolean containsInclusive(Rectangle r, int x, int y) {
-        return x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
-    }
-
     // ---------------------------------------------------------------
-    // Shadows
+    // Blocker opacity
     // ---------------------------------------------------------------
 
     /**
-     * Draws the shadows of every blocker for one light into the shadow mask, inside the light's square.
-     * Blockers themselves are left lit (so their faces still show), unless another blocker shadows them.
-     * @return true if any shadow landed inside the square.
+     * Writes the opacity of the given blockers into a set of opacity buffers, inside an area.
+     * Overlapping blockers stack: two 50% layers let 25% through.
      */
-    private boolean buildShadowMask(LightPoint light, List<Rectangle> blockers, int x0, int y0, int x1, int y1) {
-        // Use the middle of the light's pixel so shadows line up with pixel centers
-        double lx = light.getLoc().getX() + 0.5;
-        double ly = light.getLoc().getY() + 0.5;
-        // Far enough that every shadow runs past the edge of the light's reach
-        double far = light.getDist() * 3.0 + 10;
-
-        Area shadow = new Area();
-        for (Rectangle r : blockers) {
-            Area s = shadowOf(r, lx, ly, far);
-            //s.subtract(new Area(r)); // keep the blocker's own face lit
-            shadow.add(s);
+    private static void stampBlockers(List<ActiveBlocker> list, int x0, int y0, int x1, int y1, int width,
+                                      float[] other, float[] ref, float[] taper, int[] lit) {
+        for (int y = y0; y <= y1; y++) {
+            int from = y * width + x0;
+            int to = y * width + x1 + 1;
+            Arrays.fill(other, from, to, 0f);
+            Arrays.fill(ref, from, to, 0f);
+            Arrays.fill(taper, from, to, 0f);
+            Arrays.fill(lit, from, to, -1);
         }
 
-        Rectangle square = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
-        Graphics2D g = shadowMask.createGraphics();
-        g.setComposite(AlphaComposite.Src);
-        g.setColor(Color.BLACK);
-        g.fill(square); // clear only the part this light uses
-
-        boolean any = shadow.intersects(square);
-        if (any) {
-            g.setClip(square);
-            // Antialiasing gives the shadow edges a slight softness
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setColor(Color.WHITE);
-            g.fill(shadow);
-        }
-        g.dispose();
-        return any;
-    }
-
-    /**
-     * The area a rectangle hides from a light: the rectangle plus everything behind it.
-     * Each edge is stretched away from the light, and the pieces are joined together.
-     */
-    private static Area shadowOf(Rectangle r, double lx, double ly, double far) {
-        double[][] corners = {
-                {r.x, r.y},
-                {r.x + r.width, r.y},
-                {r.x + r.width, r.y + r.height},
-                {r.x, r.y + r.height}
-        };
-
-        Area area = new Area();
-        for (int i = 0; i < 4; i++) {
-            double[] a = corners[i];
-            double[] b = corners[(i + 1) % 4];
-
-            double[] aFar = pushAway(a[0], a[1], lx, ly, far);
-            double[] bFar = pushAway(b[0], b[1], lx, ly, far);
-
-            // A point straight out along the middle direction. Without it, a light very close
-            // to an edge would make the far side of the shadow cut back in toward the light.
-            double[] dirA = unit(a[0] - lx, a[1] - ly);
-            double[] dirB = unit(b[0] - lx, b[1] - ly);
-            double[] mid = unit(dirA[0] + dirB[0], dirA[1] + dirB[1]);
-
-            Path2D.Double piece = new Path2D.Double();
-            piece.moveTo(a[0], a[1]);
-            piece.lineTo(b[0], b[1]);
-            piece.lineTo(bFar[0], bFar[1]);
-            if (mid[0] != 0 || mid[1] != 0) {
-                piece.lineTo(lx + mid[0] * far * 2, ly + mid[1] * far * 2);
+        Rectangle region = new Rectangle(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+        for (ActiveBlocker b : list) {
+            Rectangle r = b.area.intersection(region);
+            if (r.isEmpty()) {
+                continue;
             }
-            piece.lineTo(aFar[0], aFar[1]);
-            piece.closePath();
-            area.add(new Area(piece));
+            int[] px = b.spritePx;
+            int aw = b.area.width;
+            for (int y = r.y; y < r.y + r.height; y++) {
+                int row = y * width;
+                int srcRow = (y - b.area.y) * aw - b.area.x;
+                for (int x = r.x; x < r.x + r.width; x++) {
+                    float a = px == null ? 1f : ALPHA[px[srcRow + x] >>> 24];
+                    if (a <= 0f) {
+                        continue; // fully transparent: no effect on light
+                    }
+                    int i = row + x;
+                    if (b.reflect) {
+                        ref[i] = 1f - (1f - ref[i]) * (1f - a);
+                        taper[i] = Math.max(taper[i], b.reflectDist);
+                    } else {
+                        other[i] = 1f - (1f - other[i]) * (1f - a);
+                        if (b.lit) {
+                            lit[i] = b.index;
+                        }
+                    }
+                }
+            }
         }
-        return area;
-    }
-
-    /** Moves a point further away from the light by the given distance. */
-    private static double[] pushAway(double px, double py, double lx, double ly, double amount) {
-        double[] dir = unit(px - lx, py - ly);
-        return new double[]{px + dir[0] * amount, py + dir[1] * amount};
-    }
-
-    private static double[] unit(double x, double y) {
-        double len = Math.sqrt(x * x + y * y);
-        if (len < 1e-9) {
-            return new double[]{0, 0};
-        }
-        return new double[]{x / len, y / len};
     }
 
     // ---------------------------------------------------------------
-    // Reflections
+    // Casting light
     // ---------------------------------------------------------------
 
     /**
-     * Lights a REFLECT rectangle from the edges that face a light.
+     * Spreads one light outward, one square ring of pixels at a time. Every pixel's light comes from the
+     * pixels one ring closer along the line back to the light, so each ring only needs the one before it.
      * <p>
-     * The light stops at the edge (the rectangle and everything behind it are already in shadow), but the
-     * surface near a lit edge picks some of it up: for each pixel inside the rectangle, follow the ray from
-     * the light to that pixel back to where it entered the rectangle. The pixel gets the light's strength at
-     * that entry point, fading evenly to 0 once the ray has travelled the blocker's reflect distance inside.
+     * The light's own row and column go first. After that, the four quarters around the light never read
+     * each other's pixels, so they run at the same time on separate cores.
      * </p>
-     * Only bands along the facing edges are scanned, since nothing deeper than the reflect distance is lit.
-     * Each scanned band is added to {@code outAreas} so it can be flushed afterwards.
      */
-    private void addReflection(LightPoint light, ActiveBlocker ref, List<ActiveBlocker> blockers, boolean hasShadow,
-                               int sx0, int sy0, int sx1, int sy1, int width, int height, List<Rectangle> outAreas) {
-        Rectangle r = ref.bounds;
-        int taper = ref.reflectDist;
+    private void castLight(LightPoint light, int cx, int cy, int range,
+                           int x0, int y0, int x1, int y1, int width) {
+        float lr = light.getRed();
+        float lg = light.getGreen();
+        float lb = light.getBlue();
 
-        // Pixel centers, matching the shadow code
-        double lx = light.getLoc().getX() + 0.5;
-        double ly = light.getLoc().getY() + 0.5;
+        // The light's pixel, then its row and column outward
+        float[] acc = new float[4];
+        visitIfInside(light, cx, cy, cx, cy, x0, y0, x1, y1, width, lr, lg, lb, 4, acc);
+        for (int k = 1; k <= range; k++) {
+            visitIfInside(light, cx, cy, cx + k, cy, x0, y0, x1, y1, width, lr, lg, lb, 4, acc);
+            visitIfInside(light, cx, cy, cx - k, cy, x0, y0, x1, y1, width, lr, lg, lb, 4, acc);
+            visitIfInside(light, cx, cy, cx, cy + k, x0, y0, x1, y1, width, lr, lg, lb, 4, acc);
+            visitIfInside(light, cx, cy, cx, cy - k, x0, y0, x1, y1, width, lr, lg, lb, 4, acc);
+        }
 
-        int left = r.x;
-        int top = r.y;
-        int right = r.x + r.width;    // exclusive
-        int bottom = r.y + r.height;  // exclusive
+        // The four quarters in parallel
+        IntStream.range(0, 4).parallel().forEach(q ->
+                castQuarter(q, light, cx, cy, range, x0, y0, x1, y1, width, lr, lg, lb));
+    }
 
-        // Only pixels the taper can reach: inside the rectangle, on screen, within the light's reach + taper
-        int cx = light.getLoc().getX();
-        int cy = light.getLoc().getY();
-        int reachDist = light.getDist() + taper;
-        Rectangle limit = r
-                .intersection(new Rectangle(0, 0, width, height))
-                .intersection(new Rectangle(cx - reachDist, cy - reachDist, reachDist * 2 + 1, reachDist * 2 + 1));
-        if (limit.isEmpty()) {
+    /**
+     * One quarter around the light (not counting the light's row and column), ring by ring.
+     * Quarter 0 is right-down, 1 left-down, 2 left-up, 3 right-up.
+     */
+    private void castQuarter(int q, LightPoint light, int cx, int cy, int range,
+                             int x0, int y0, int x1, int y1, int width, float lr, float lg, float lb) {
+        int sx = (q == 0 || q == 3) ? 1 : -1;
+        int sy = (q < 2) ? 1 : -1;
+        float[] acc = new float[4];
+
+        // How far (in steps of sx / sy from the light) the area reaches in each direction
+        int iLo = sx > 0 ? x0 - cx : cx - x1;
+        int iHi = sx > 0 ? x1 - cx : cx - x0;
+        int jLo = sy > 0 ? y0 - cy : cy - y1;
+        int jHi = sy > 0 ? y1 - cy : cy - y0;
+        if (iHi < 1 || jHi < 1) {
+            return; // this quarter is entirely outside the area
+        }
+
+        for (int k = 1; k <= range; k++) {
+            // The ring's column on this side: dx = k, dy = 1..k
+            if (k >= iLo && k <= iHi) {
+                int x = cx + sx * k;
+                int from = Math.max(1, jLo);
+                int to = Math.min(k, jHi);
+                for (int j = from; j <= to; j++) {
+                    visit(light, cx, cy, x, cy + sy * j, x0, y0, x1, y1, width, lr, lg, lb, q, acc);
+                }
+            }
+            // The ring's row on this side: dy = k, dx = 1..k-1
+            if (k >= jLo && k <= jHi) {
+                int y = cy + sy * k;
+                int from = Math.max(1, iLo);
+                int to = Math.min(k - 1, iHi);
+                for (int i = from; i <= to; i++) {
+                    visit(light, cx, cy, cx + sx * i, y, x0, y0, x1, y1, width, lr, lg, lb, q, acc);
+                }
+            }
+        }
+    }
+
+    private void visitIfInside(LightPoint light, int cx, int cy, int x, int y,
+                               int x0, int y0, int x1, int y1, int width,
+                               float lr, float lg, float lb, int slot, float[] acc) {
+        if (x >= x0 && x <= x1 && y >= y0 && y <= y1) {
+            visit(light, cx, cy, x, y, x0, y0, x1, y1, width, lr, lg, lb, slot, acc);
+        }
+    }
+
+    /**
+     * Works out one pixel for one light: how much light reaches it, how much its own opacity stops,
+     * any REFLECT glow, and whether it is a lit face of a LIT blocker.
+     * {@code acc} is a 4-slot scratch array: share of light arriving, reflect entry strength,
+     * reflect depth, and how much of the way back stays inside the same LIT blocker.
+     */
+    private void visit(LightPoint light, int cx, int cy, int x, int y,
+                       int x0, int y0, int x1, int y1, int width,
+                       float lr, float lg, float lb, int slot, float[] acc) {
+        int i = y * width + x;
+        int dx = x - cx;
+        int dy = y - cy;
+        int adx = Math.abs(dx);
+        int ady = Math.abs(dy);
+        int k = Math.max(adx, ady);
+
+        float bright = light.getBrightnessAt(x, y);
+        float aOther = opOther[i];
+        float aRef = opRef[i];
+        boolean inRef = aRef > 0f;
+        int litId = litIdBuf[i];
+
+        acc[0] = 0f;
+        acc[1] = 0f;
+        acc[2] = 0f;
+        acc[3] = 0f;
+
+        if (k == 0) {
+            acc[0] = 1f; // the light's own pixel
+        } else {
+            // Distance between rings along this ray (only needed inside reflect material)
+            float step = inRef ? (float) (Math.sqrt((double) dx * dx + (double) dy * dy) / k) : 0f;
+            // The point one ring closer along the line to the light usually falls between two pixels,
+            // so blend those two by how close it is to each.
+            if (adx >= ady) {
+                int px = x - Integer.signum(dx);
+                float f = (float) (dy * (k - 1)) / k;
+                int fl = (int) Math.floor(f);
+                float w = f - fl;
+                addParent(light, px, cy + fl, 1f - w, step, inRef, litId, x0, y0, x1, y1, width, acc);
+                addParent(light, px, cy + fl + 1, w, step, inRef, litId, x0, y0, x1, y1, width, acc);
+            } else {
+                int py = y - Integer.signum(dy);
+                float f = (float) (dx * (k - 1)) / k;
+                int fl = (int) Math.floor(f);
+                float w = f - fl;
+                addParent(light, cx + fl, py, 1f - w, step, inRef, litId, x0, y0, x1, y1, width, acc);
+                addParent(light, cx + fl + 1, py, w, step, inRef, litId, x0, y0, x1, y1, width, acc);
+            }
+        }
+
+        float tin = acc[0];                             // share of the light that reached this pixel
+        float t = tin * (1f - aOther) * (1f - aRef);    // share left after this pixel's own opacity
+        tout[i] = t;
+        float strength = bright * t;
+        lout[i] = strength;
+
+        // REFLECT: full strength where the ray went in, fading evenly to 0 at the taper distance
+        if (inRef) {
+            entryBuf[i] = acc[1];
+            depthBuf[i] = acc[2];
+            float fade = 1f - acc[2] / taperBuf[i];
+            if (fade > 0f) {
+                strength += acc[1] * fade * aRef;
+            }
+        } else {
+            entryBuf[i] = 0f;
+            depthBuf[i] = 0f;
+        }
+
+        if (strength > 0f) {
+            redBuf[i] += strength * lr;
+            greenBuf[i] += strength * lg;
+            blueBuf[i] += strength * lb;
+        }
+
+        // LIT: a pixel of the blocker whose way back to the light leaves the blocker is a face facing the light
+        if (litId >= 0 && acc[3] < 0.5f) {
+            ActiveBlocker b = frameBlockers[litId];
+            b.faceSum[slot] += bright * tin;
+            b.faceCount[slot]++;
+        }
+    }
+
+    /** Adds one of a pixel's two parent pixels (one ring closer to the light) to the running totals, weighted. */
+    private void addParent(LightPoint light, int px, int py, float w, float step, boolean inRef, int litId,
+                           int x0, int y0, int x1, int y1, int width, float[] acc) {
+        if (w <= 0f) {
             return;
         }
-
-        // A band along each edge that faces the light
-        List<Rectangle> bands = new ArrayList<>();
-        if (lx < left) {
-            bands.add(new Rectangle(left, top, taper, r.height).intersection(limit));
-        }
-        if (lx > right) {
-            bands.add(new Rectangle(right - taper, top, taper, r.height).intersection(limit));
-        }
-        if (ly < top) {
-            bands.add(new Rectangle(left, top, r.width, taper).intersection(limit));
-        }
-        if (ly > bottom) {
-            bands.add(new Rectangle(left, bottom - taper, r.width, taper).intersection(limit));
-        }
-
-        for (Rectangle band : bands) {
-            if (band.isEmpty()) {
-                continue;
+        if (px < x0 || px > x1 || py < y0 || py > y1) {
+            // Off screen: nothing there blocks light
+            acc[0] += w;
+            if (inRef) {
+                acc[1] += w * light.getBrightnessAt(px, py);
+                acc[2] += w * step * 0.5f;
             }
-            outAreas.add(band);
-
-            // Only other blockers overlapping this band can get in the way inside it
-            List<ActiveBlocker> near = new ArrayList<>();
-            for (ActiveBlocker o : blockers) {
-                if (o != ref && o.bounds.intersects(band)) {
-                    near.add(o);
-                }
+            return;
+        }
+        int j = py * width + px;
+        acc[0] += w * tout[j];
+        if (inRef) {
+            if (opRef[j] > 0f) {
+                // Already inside reflect material: carry the entry strength on, dimmed by anything else in the way
+                acc[1] += w * entryBuf[j] * (1f - opOther[j]);
+                acc[2] += w * (depthBuf[j] + step);
+            } else {
+                // Coming in from outside: the light arriving here is the entry strength
+                acc[1] += w * lout[j];
+                acc[2] += w * step * 0.5f;
             }
-
-            for (int y = band.y; y < band.y + band.height; y++) {
-                int row = y * width;
-                double py = y + 0.5;
-                double dy = py - ly;
-                for (int x = band.x; x < band.x + band.width; x++) {
-                    double px = x + 0.5;
-                    double dx = px - lx;
-
-                    // Where along the ray (0 = light, 1 = this pixel) it enters the rectangle
-                    double tx = dx > 0 ? (left - lx) / dx : dx < 0 ? (right - lx) / dx : Double.NEGATIVE_INFINITY;
-                    double ty = dy > 0 ? (top - ly) / dy : dy < 0 ? (bottom - ly) / dy : Double.NEGATIVE_INFINITY;
-                    double tEnter = Math.max(tx, ty);
-                    if (tEnter <= 0 || tEnter >= 1) {
-                        continue;
-                    }
-
-                    double len = Math.sqrt(dx * dx + dy * dy);
-                    double depth = (1 - tEnter) * len; // how far the light has travelled inside
-                    if (depth > taper) {
-                        continue;
-                    }
-
-                    // Light strength just outside the edge, where it hits the face
-                    double tHit = Math.max(0, tEnter - 1.5 / len);
-                    int hx = (int) Math.floor(lx + dx * tHit);
-                    int hy = (int) Math.floor(ly + dy * tHit);
-                    float incoming = light.getBrightnessAt(hx, hy);
-                    if (incoming <= 0f) {
-                        continue;
-                    }
-                    if (hasShadow && hx >= sx0 && hx <= sx1 && hy >= sy0 && hy <= sy1) {
-                        int shade = maskPx[hy * width + hx] & 0xFF; // does something else shade the face?
-                        if (shade == 255) {
-                            continue;
-                        }
-                        incoming *= (255 - shade) / 255f;
-                    }
-
-                    double ex = lx + dx * tEnter;
-                    double ey = ly + dy * tEnter;
-                    if (taperBlocked(near, x, y, ex, ey, px, py)) {
-                        continue;
-                    }
-
-                    // Full strength at the edge, fading evenly to 0 at the taper distance
-                    float strength = incoming * (float) (1.0 - depth / taper);
-
-                    int i = row + x;
-                    if (strength > reflectBuf[i]) {
-                        reflectBuf[i] = strength;
-                    }
-                }
-            }
+        }
+        if (litId >= 0 && litIdBuf[j] == litId) {
+            acc[3] += w;
         }
     }
 
-    /**
-     * Whether another blocker sits between where the light entered a reflector and the pixel being lit.
-     * Overlapping REFLECT blockers (like a wall and floor whose boxes overlap in a corner) don't block
-     * each other's surfaces, but anything else in the way does.
-     */
-    private static boolean taperBlocked(List<ActiveBlocker> near, int x, int y,
-                                        double ex, double ey, double px, double py) {
-        for (ActiveBlocker o : near) {
-            if (o.reflect && o.bounds.contains(x, y)) {
-                continue;
-            }
-            if (o.bounds.intersectsLine(ex, ey, px, py)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Adds the collected reflection for one light to the light buffers and clears the scratch buffer. */
-    private void flushReflection(LightPoint light, Rectangle area, int width) {
-        float red = light.getRed();
-        float green = light.getGreen();
-        float blue = light.getBlue();
-        for (int y = area.y; y < area.y + area.height; y++) {
-            int row = y * width;
-            for (int x = area.x; x < area.x + area.width; x++) {
-                int i = row + x;
-                float s = reflectBuf[i];
-                if (s > 0f) {
-                    redBuf[i] += s * red;
-                    greenBuf[i] += s * green;
-                    blueBuf[i] += s * blue;
-                    reflectBuf[i] = 0f;
-                }
-            }
-        }
-    }
-
-// ---------------------------------------------------------------
-// LIT blockers
-// ---------------------------------------------------------------
-
-    /**
-     * The average light strength on the edges of a rectangle that face a light, sampled just outside
-     * each edge. Samples out of the light's reach or shaded by other blockers count toward the average
-     * as 0 or dimmed values, so a partly covered blocker gets less light.
-     */
-    private float averageFaceLight(LightPoint light, Rectangle r, boolean hasShadow,
-                                   int sx0, int sy0, int sx1, int sy1, int width, int height) {
-        double lx = light.getLoc().getX() + 0.5;
-        double ly = light.getLoc().getY() + 0.5;
-
-        int left = r.x;
-        int top = r.y;
-        int right = r.x + r.width;    // exclusive
-        int bottom = r.y + r.height;  // exclusive
-
-        int off = 2;                                  // step outside the edge, clear of the shadow's antialiasing
-        int step = Math.max(1, GameSettings.scale(4)); // spacing between samples
-
-        float total = 0f;
-        int count = 0;
-
-        if (lx < left) {           // left face
-            for (int y = top; y < bottom; y += step) {
-                total += sampleLight(light, left - off, y, hasShadow, sx0, sy0, sx1, sy1);
-                count++;
-            }
-        }
-        if (lx > right) {          // right face
-            for (int y = top; y < bottom; y += step) {
-                total += sampleLight(light, right - 1 + off, y, hasShadow, sx0, sy0, sx1, sy1);
-                count++;
-            }
-        }
-        if (ly < top) {            // top face
-            for (int x = left; x < right; x += step) {
-                total += sampleLight(light, x, top - off, hasShadow, sx0, sy0, sx1, sy1);
-                count++;
-            }
-        }
-        if (ly > bottom) {         // bottom face
-            for (int x = left; x < right; x += step) {
-                total += sampleLight(light, x, bottom - 1 + off, hasShadow, sx0, sy0, sx1, sy1);
-                count++;
-            }
-        }
-
-        return count == 0 ? 0f : total / count;
-    }
-
-    /** The light's strength at one point, dimmed by the shadow mask if something shades it. */
-    private float sampleLight(LightPoint light, int x, int y, boolean hasShadow,
-                              int sx0, int sy0, int sx1, int sy1) {
-        float s = light.getBrightnessAt(x, y);
-        if (s <= 0f) {
-            return 0f;
-        }
-        // The mask is only valid inside this light's on-screen square
-        if (hasShadow && x >= sx0 && x <= sx1 && y >= sy0 && y <= sy1) {
-            int shade = maskPx[y * shadowMask.getWidth() + x] & 0xFF;
-            s *= (255 - shade) / 255f;
-        }
-        return s;
-    }
+    // ---------------------------------------------------------------
+    // LIT blockers
+    // ---------------------------------------------------------------
 
     /**
      * Lights a LIT blocker evenly with its averaged light, then blends the result toward the original color.
+     * Semi-transparent pixels get a matching share of that; fully transparent ones keep their normal lighting.
      * Must run after every light has been added, since it rewrites the light buffers for this area.
      */
-    private void fillLit(ActiveBlocker b, int width, int height) {
-        Rectangle area = b.bounds.intersection(new Rectangle(0, 0, width, height));
+    private void fillLit(ActiveBlocker b, int width) {
+        Rectangle area = b.area;
         if (area.isEmpty()) {
             return;
         }
@@ -723,19 +708,19 @@ public class LightMgmt {
         for (int y = area.y; y < area.y + area.height; y++) {
             int row = y * width;
             for (int x = area.x; x < area.x + area.width; x++) {
+                float a = b.spritePx == null ? 1f
+                        : ALPHA[b.spritePx[(y - area.y) * area.width + (x - area.x)] >>> 24];
+                if (a <= 0f) {
+                    continue;
+                }
                 int i = row + x;
-                redBuf[i]   = keep + b.litBlend * Math.min(1f, redBuf[i]   + b.litRed);
-                greenBuf[i] = keep + b.litBlend * Math.min(1f, greenBuf[i] + b.litGreen);
-                blueBuf[i]  = keep + b.litBlend * Math.min(1f, blueBuf[i]  + b.litBlue);
+                float r = keep + b.litBlend * Math.min(1f, redBuf[i] + b.litRed);
+                float g = keep + b.litBlend * Math.min(1f, greenBuf[i] + b.litGreen);
+                float bl = keep + b.litBlend * Math.min(1f, blueBuf[i] + b.litBlue);
+                redBuf[i] += (r - redBuf[i]) * a;
+                greenBuf[i] += (g - greenBuf[i]) * a;
+                blueBuf[i] += (bl - blueBuf[i]) * a;
             }
         }
-    }
-
-    public void setLitBlend(float litBlend) {
-        this.litBlend = Math.max(0f, Math.min(1f, litBlend));
-    }
-
-    public float getLitBlend() {
-        return litBlend;
     }
 }
