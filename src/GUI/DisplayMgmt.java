@@ -1,6 +1,5 @@
 package GUI;
 
-import Engine.Interactions.Interactable;
 import Engine.Player;
 import GUI.Lighting.*;
 import Helper.Point;
@@ -402,13 +401,13 @@ public class DisplayMgmt {
 
 
         private JPanel createDebugRoomTest() {
-            Room<RoomComponent> room = createDebugRoom();
+            Room room = createDebugRoom();
             JPanel roomJ = room.putToScreen();
 
             MouseAdapter clicking = new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    for (InteractableObj obj : room.getInteractables()) {
+                    for (InteractableObj obj : room.getInteractable()) {
                         Helper.Point[] corners = obj.getShapeCorners();
                         Polygon shape = new Polygon();
                         for (Helper.Point p : corners) {
@@ -426,7 +425,7 @@ public class DisplayMgmt {
             return roomJ;
         }
 
-        private Room<RoomComponent> createDebugRoom() {
+        private Room createDebugRoom() {
             final double WALL_RATIO = 1.5/3.0;
             final double SC_PERCENT = 0.85;
             final int SC_ANGLE = 30;
@@ -436,11 +435,11 @@ public class DisplayMgmt {
 
             Floor floor = new Floor("/images/LightTest.png");
             Ceiling ceiling = new Ceiling("/images/LightTest.png");
-            Room<RoomComponent> room = new Room<>(floor, ceiling, roomPt);
-            room.setWall(new Wall<>("/images/LightTest.png"), 0);
-            room.setWall(new Wall<>("/images/LightTest.png"), 1);
-            room.setWall(new Wall<>("/images/LightTest.png"), 2);
-            room.setWall(new Wall<>("/images/LightTest.png"), 3);
+            Room room = new Room(floor, ceiling, roomPt);
+            room.setWall(new Wall("/images/LightTest.png"), 0);
+            room.setWall(new Wall("/images/LightTest.png"), 1);
+            room.setWall(new Wall("/images/LightTest.png"), 2);
+            room.setWall(new Wall("/images/LightTest.png"), 3);
             room.setLookingIndex(1);
 
             QuadShapeDrawer testP = new QuadShapeDrawer(new Point(200, 200));
@@ -450,12 +449,7 @@ public class DisplayMgmt {
             BasicObj testObj = new BasicObj(testP.getPoints(), "sss", false);
             testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.BLOCK));
 
-            try{
-                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
-                wall.addRoomObj("testObj", testObj);
-            } catch (ClassCastException e) {
-                System.err.println(e);
-            }
+            room.getLookingWall().addRoomObj("testObj", testObj);
 
             testP = new QuadShapeDrawer(new Point(1000, 400));
             testP.drawLine(0, 100);
@@ -465,12 +459,7 @@ public class DisplayMgmt {
             testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.REFLECT));
             testObj.getLightBlocker("obj").setReflectDist(20);
 
-            try{
-                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
-                wall.addRoomObj("testObj2", testObj);
-            } catch (ClassCastException e) {
-                System.err.println(e);
-            }
+            room.getLookingWall().addRoomObj("testObj2", testObj);
 
             testP = new QuadShapeDrawer(new Point(1200, 500));
             testP.drawLine(0, 100);
@@ -480,12 +469,7 @@ public class DisplayMgmt {
             testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.LIT));
             testObj.getLightBlocker("obj").setLitBlend(.35f);
 
-            try{
-                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
-                wall.addRoomObj("testObj3", testObj);
-            } catch (ClassCastException e) {
-                System.err.println(e);
-            }
+            room.getLookingWall().addRoomObj("testObj3", testObj);
 
             testP = new QuadShapeDrawer(new Point(500, 700));
             testP.drawLine(0, 50);
@@ -500,12 +484,7 @@ public class DisplayMgmt {
             temp.setNextTrigger(temp2);
             testObj1.setEntryPoint(temp);
 
-            try{
-                Wall<InteractableObj> wall = (Wall<InteractableObj>) room.getLookingWall();
-                wall.addRoomObj("testObj4", testObj1);
-            } catch (ClassCastException e) {
-                System.err.println(e);
-            }
+            room.getLookingWall().addRoomObj("testObj4", testObj1);
 
             Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
             Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
@@ -530,7 +509,7 @@ public class DisplayMgmt {
             return room;
         }
 
-        private Room<RoomComponent> createBasicRoom() {
+        private Room createBasicRoom() {
             final double WALL_RATIO = 1.5/3.0;
             final double SC_PERCENT = 0.85;
             final int SC_ANGLE = 30;
@@ -540,11 +519,11 @@ public class DisplayMgmt {
 
             Floor floor = new Floor("/images/WoodFloor.png");
             Ceiling ceiling = new Ceiling("/images/WoodFloor.png");
-            Room<RoomComponent> room = new Room<>(floor, ceiling, roomPt);
-            room.setWall(new Wall<>("/images/BrickWall.png"), 0);
-            room.setWall(new Wall<>("/images/BrickWall.png"), 1);
-            room.setWall(new Wall<>("/images/BrickWall.png"), 2);
-            room.setWall(new Wall<>("/images/BrickWall.png"), 3);
+            Room room = new Room(floor, ceiling, roomPt);
+            room.setWall(new Wall("/images/BrickWall.png"), 0);
+            room.setWall(new Wall("/images/BrickWall.png"), 1);
+            room.setWall(new Wall("/images/BrickWall.png"), 2);
+            room.setWall(new Wall("/images/BrickWall.png"), 3);
             room.setLookingIndex(1);
 
             QuadShapeDrawer testP = new QuadShapeDrawer(new Point(200, 200));
@@ -554,12 +533,7 @@ public class DisplayMgmt {
             BasicObj testObj = new BasicObj(testP.getPoints(), "/images/Crate.png", false);
             testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.BLOCK));
 
-            try{
-                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
-                wall.addRoomObj("testObj", testObj);
-            } catch (ClassCastException e) {
-                System.err.println(e);
-            }
+            room.getLookingWall().addRoomObj("testObj", testObj);
 
             testP = new QuadShapeDrawer(new Point(1000, 400));
             testP.drawLine(0, 100);
@@ -569,12 +543,7 @@ public class DisplayMgmt {
             testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.LIT));
             testObj.getLightBlocker("obj").setReflectDist(20);
 
-            try{
-                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
-                wall.addRoomObj("testObj2", testObj);
-            } catch (ClassCastException e) {
-                System.err.println(e);
-            }
+            room.getLookingWall().addRoomObj("testObj2", testObj);
 
             testP = new QuadShapeDrawer(new Point(1200, 500));
             testP.drawLine(0, 100);
@@ -584,12 +553,7 @@ public class DisplayMgmt {
             testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.LIT));
             testObj.getLightBlocker("obj").setLitBlend(.35f);
 
-            try{
-                Wall<BasicObj> wall = (Wall<BasicObj>) room.getLookingWall();
-                wall.addRoomObj("testObj3", testObj);
-            } catch (ClassCastException e) {
-                System.err.println(e);
-            }
+            room.getLookingWall().addRoomObj("testObj3", testObj);
 
             testP = new QuadShapeDrawer(new Point(500, 700));
             testP.drawLine(0, 50);
@@ -604,12 +568,7 @@ public class DisplayMgmt {
             temp.setNextTrigger(temp2);
             testObj1.setEntryPoint(temp);
 
-            try{
-                Wall<InteractableObj> wall = (Wall<InteractableObj>) room.getLookingWall();
-                wall.addRoomObj("testObj4", testObj1);
-            } catch (ClassCastException e) {
-                System.err.println(e);
-            }
+            room.getLookingWall().addRoomObj("testObj4", testObj1);
 
             Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
             Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
@@ -638,7 +597,7 @@ public class DisplayMgmt {
             JPanel litPanel = new JPanel(new BorderLayout());
 
             //1 - Creates the debug room.
-            Room<RoomComponent> room = createBasicRoom();
+            Room room = createBasicRoom();
 
             //2 - Creates the lightLayer and passes it to the room so it can add its LightBlockers
             LightLayer lightLayer = new LightLayer(GameSettings.screenWidth, GameSettings.screenHeight);
@@ -654,7 +613,7 @@ public class DisplayMgmt {
             lightingUI.setShowBlockers(showBlockers);
             lightingUI.setShowLights(showLights);
             lightingUI.setShowInteractable(showInteractable);
-            lightingUI.setInteractables(room::getInteractables);
+            lightingUI.setInteractables(room::getInteractable);
 
             //5 - Creating the graphics for the room and applying the lightUI to it.
             JPanel roomPanel = room.putToScreen();
@@ -696,7 +655,7 @@ public class DisplayMgmt {
 
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    for (InteractableObj obj : room.getInteractables()) {
+                    for (InteractableObj obj : room.getInteractable()) {
                         Helper.Point[] corners = obj.getShapeCorners();
                         Polygon shape = new Polygon();
                         for (Helper.Point p : corners) {
@@ -749,7 +708,7 @@ public class DisplayMgmt {
             JPanel litPanel = new JPanel(new BorderLayout());
 
             //1 - Creates the debug room.
-            Room<RoomComponent> room = createDebugRoom();
+            Room room = createDebugRoom();
 
             //2 - Creates the lightLayer and passes it to the room so it can add its LightBlockers
             LightLayer lightLayer = new LightLayer(GameSettings.screenWidth, GameSettings.screenHeight);
@@ -765,7 +724,7 @@ public class DisplayMgmt {
             lightingUI.setShowBlockers(showBlockers);
             lightingUI.setShowLights(showLights);
             lightingUI.setShowInteractable(showInteractable);
-            lightingUI.setInteractables(room::getInteractables);
+            lightingUI.setInteractables(room::getInteractable);
 
             //5 - Creating the graphics for the room and applying the lightUI to it.
             JPanel roomPanel = room.putToScreen();
@@ -807,7 +766,7 @@ public class DisplayMgmt {
 
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    for (InteractableObj obj : room.getInteractables()) {
+                    for (InteractableObj obj : room.getInteractable()) {
                         Helper.Point[] corners = obj.getShapeCorners();
                         Polygon shape = new Polygon();
                         for (Helper.Point p : corners) {

@@ -12,17 +12,19 @@ import RoomClasses.roomParts.RoomComponent;
 import RoomClasses.roomParts.RoomComponent.RoomPart;
 import RoomClasses.roomParts.RoomPoints;
 import RoomClasses.roomParts.Wall;
+import RoomClasses.roomParts.Floor;
+import RoomClasses.roomParts.Ceiling;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Room<T extends RoomComponent>{
-    T[] walls = (T[]) new RoomComponent[4];
+public class Room{
+    Wall[] walls = new Wall[4];
     int lookingWall = 0;
-    T floor = null;
-    T ceiling = null;
+    Floor floor = null;
+    Ceiling ceiling = null;
     boolean completed = false;
     RoomPoints roomPoints;
 
@@ -31,7 +33,7 @@ public class Room<T extends RoomComponent>{
      * @param floor The floor of the room.
      * @param ceiling The ceiling of the room.
      */
-    public Room(T floor, T ceiling, RoomPoints roomPoints){
+    public Room(Floor floor, Ceiling ceiling, RoomPoints roomPoints){
         this.floor = floor;
         this.ceiling = ceiling;
         this.completed = false;
@@ -47,27 +49,27 @@ public class Room<T extends RoomComponent>{
      * @param wall  The wall to add.
      * @param index What index to add it at.
      */
-    public void setWall(T wall, int index){
+    public void setWall(Wall wall, int index){
         if (index < 0 || index > walls.length - 1){
             return;
         }
         walls[index] = wall;
     }
 
-    public T getLookingWall() {
+    public Wall getLookingWall() {
         return this.walls[lookingWall];
     }
-    public T getLeftWall() {
+    public Wall getLeftWall() {
         int temp = this.lookingWall-1;
         if (temp < 0){temp = 3;}
         return this.walls[temp];
     }
-    public T getRightWall() {
+    public Wall getRightWall() {
         int temp = this.lookingWall+1;
         if (temp > 3){temp = 0;}
         return this.walls[temp];
     }
-    public T getFourthWall() {
+    public Wall getFourthWall() {
         int temp = this.lookingWall-1;
         if (temp < 0){temp = 3;}
         temp -= 1;
@@ -82,9 +84,8 @@ public class Room<T extends RoomComponent>{
      * <p/>
      * @return An array of the visible walls.
      */
-    public T[]  getVisibleWalls() {
-        @SuppressWarnings("unchecked")
-        T[] temp = (T[]) new Object[3];
+    public Wall[]  getVisibleWalls() {
+        Wall[] temp = new Wall[3];
         temp[0] = this.getLeftWall();
         temp[1] = this.getLookingWall();
         temp[2] = this.getRightWall();
@@ -210,9 +211,10 @@ public class Room<T extends RoomComponent>{
         return temp;
     }
 
-    public List<InteractableObj> getInteractables() {
+    public List<InteractableObj> getInteractable() {
         List<InteractableObj> result = new ArrayList<>();
-        if (this.getLookingWall() instanceof Wall<?> wall) {
+        Wall wall = this.getLookingWall();
+        if (wall != null) {
             for (RoomObj obj : wall.getRoomObjs()) {
                 if (obj instanceof InteractableObj interactable) {
                     result.add(interactable);

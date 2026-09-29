@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Wall<T extends RoomObj> extends RoomComponent {
-    private final Map<String, T> roomObjs = new HashMap<>();
+public class Wall extends RoomComponent {
+    private final Map<String, RoomObj> roomObjs = new HashMap<>();
 
     public Wall(String imagePath) {
         super(imagePath);
@@ -123,16 +123,16 @@ public class Wall<T extends RoomObj> extends RoomComponent {
         return this.lightPoints.get(name);
     }
 
-    public void addRoomObj(String key, T roomObj) {
+    public void addRoomObj(String key, RoomObj roomObj) {
         //System.out.println("Adding " + key + " with value " + roomObj);
         this.roomObjs.put(key, roomObj);
     }
 
-    public T getRoomObj(String key) {
+    public RoomObj getRoomObj(String key) {
         return this.roomObjs.get(key);
     }
 
-    public List<T> getRoomObjs() {
+    public List<RoomObj> getRoomObjs() {
         return new ArrayList<>(this.roomObjs.values());
     }
 
