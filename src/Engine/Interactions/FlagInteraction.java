@@ -40,10 +40,7 @@ public class FlagInteraction extends Interactable {
     @Override
     public void trigger() {
         System.out.println(this.getMessage());
-        //System.out.println("Object " + this + " Triggered.");
-        //System.out.println("Flag " + this.checkFlag + " is " + this.flags.getFlag(this.checkFlag));
         this.flags.addFlag(this.checkFlag, true);
-        //System.out.println("Flag " + this.checkFlag + " is now " + this.flags.getFlag(this.checkFlag));
 
         if(this.nextTrigger != null) {
             this.nextTrigger.trigger();
