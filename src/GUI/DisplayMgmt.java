@@ -7,7 +7,7 @@ import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.CustomPanels.RectPanel;
 import Helper.FontWrapper;
 import Helper.GameSettings;
-import RoomClasses.Interaction;
+import Engine.Interactions.FlagInteraction;
 import RoomClasses.Room;
 import RoomClasses.RoomObjects.BasicObj;
 import RoomClasses.RoomObjects.InteractableObj;
@@ -493,8 +493,8 @@ public class DisplayMgmt {
             testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
             testObj1.getLightBlocker("obj").setReflectDist(75);
 
-            Interaction temp = new Interaction("This is a test", Interaction.InteractionType.DIALOGUE);
-            Interaction temp2 = new Interaction("", Interaction.InteractionType.FLAG);
+            FlagInteraction temp = new FlagInteraction("This is a test", FlagInteraction.InteractionType.DIALOGUE);
+            FlagInteraction temp2 = new FlagInteraction("", FlagInteraction.InteractionType.FLAG);
             temp.setNextTrigger(temp2);
             testObj1.setEntryPoint(temp);
 
@@ -597,8 +597,8 @@ public class DisplayMgmt {
             testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
             testObj1.getLightBlocker("obj").setReflectDist(75);
 
-            Interaction temp = new Interaction("This is a test", Interaction.InteractionType.DIALOGUE);
-            Interaction temp2 = new Interaction("", Interaction.InteractionType.FLAG);
+            FlagInteraction temp = new FlagInteraction("This is a test", FlagInteraction.InteractionType.DIALOGUE);
+            FlagInteraction temp2 = new FlagInteraction("", FlagInteraction.InteractionType.FLAG);
             temp.setNextTrigger(temp2);
             testObj1.setEntryPoint(temp);
 

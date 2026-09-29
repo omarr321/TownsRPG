@@ -1,12 +1,12 @@
 package RoomClasses.RoomObjects;
 
+import Engine.Interactions.Interactable;
 import Helper.Point;
-import RoomClasses.Interaction;
 
 import java.awt.*;
 
-public class InteractableObj extends BasicObj{
-    private Interaction entryPoint = null;
+public class InteractableObj<T extends Interactable> extends BasicObj{
+    private T entryPoint = null;
 
     public InteractableObj(Point[] shapeCorners, Color color) {
         super(shapeCorners, color);
@@ -18,7 +18,7 @@ public class InteractableObj extends BasicObj{
         super(shapeCorners, imagePath, warped);
     }
 
-    public void setEntryPoint(Interaction entryPoint) {
+    public void setEntryPoint(T entryPoint) {
         this.entryPoint = entryPoint;
     }
 
