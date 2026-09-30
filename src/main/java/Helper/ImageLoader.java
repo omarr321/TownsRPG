@@ -10,16 +10,40 @@ public class ImageLoader {
     private static final String DEFAULT_IMAGE = "/images/DebugImage.png";
 
     public ImageLoader(String path) {
-        java.net.URL userImg = this.getClass().getResource(path);
+        java.net.URL userImg = null;
+
+        if (path != null && !path.isBlank()) {
+            userImg = this.getClass().getResource(path);
+        }
+
         if (userImg != null) {
             currImage = new ImageIcon(userImg).getImage();
             this.loaded = true;
         } else {
             userImg = this.getClass().getResource(DEFAULT_IMAGE);
             this.usingDefault = true;
-            if  (userImg == null) {
+            if  (userImg != null) {
+                currImage = new ImageIcon(userImg).getImage();
+                this.loaded = true;
+            }
+        }
+    }
 
-            } else {
+    // package-private, used by tests
+    ImageLoader(String path, String defaultPath) {
+        java.net.URL userImg = null;
+
+        if (path != null && !path.isBlank()) {
+            userImg = this.getClass().getResource(path);
+        }
+
+        if (userImg != null) {
+            currImage = new ImageIcon(userImg).getImage();
+            this.loaded = true;
+        } else {
+            this.usingDefault = true;
+            userImg = this.getClass().getResource(defaultPath);
+            if (userImg != null) {
                 currImage = new ImageIcon(userImg).getImage();
                 this.loaded = true;
             }
@@ -40,5 +64,9 @@ public class ImageLoader {
 
     public boolean isLoaded() {
         return this.loaded;
+    }
+
+    public boolean isUsingDefault() {
+        return this.usingDefault;
     }
 }
