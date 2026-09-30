@@ -15,6 +15,10 @@ public class QuadShapeDrawer {
     }
 
     public static Point calcPoint(Point point, float angle, float dist){
+        if(point == null) {
+            return new Point(0, 0);
+        }
+
         double x0 = point.getX();
         double y0 = point.getY();
 
@@ -27,6 +31,13 @@ public class QuadShapeDrawer {
     }
 
     public static int calcDist(Point p1, Point p2) {
+        if (p1 == null) {
+            p1 = new Point(0, 0);
+        }
+        if (p2 == null) {
+            p2 = new Point(0, 0);
+        }
+
         double pt1 = Math.pow(p2.getX() - p1.getX(), 2);
         double pt2 = Math.pow(p2.getY() - p1.getY(), 2);
         return (int) Math.sqrt(pt1+pt2);
