@@ -3,6 +3,8 @@ package Helper;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -113,5 +115,21 @@ public class FontWrapperTest {
     @Test
     void defaultFontIsCorrect() {
         assertEquals(MISSING_FONT, FontWrapper.getDefaultFont());
+    }
+
+    @Test
+    void loadsFontThrowsIOException() {
+        FontWrapper fontWrapper = new FontWrapper("/fonts/Tuffy.ttf", "Tuffy") {
+            @Override
+            InputStream openStream(String path) {
+                return new InputStream() {
+                    @Override
+                    public int read() throws IOException {
+                        throw new IOException("Simulated disk read error");
+                    }
+                };
+            }
+        };
+        assertEquals(MISSING_FONT, fontWrapper.getFont(16));
     }
 }

@@ -20,30 +20,9 @@ public class ImageLoader {
             currImage = new ImageIcon(userImg).getImage();
             this.loaded = true;
         } else {
-            userImg = this.getClass().getResource(DEFAULT_IMAGE);
+            userImg = this.getClass().getResource(getDefaultPath());
             this.usingDefault = true;
             if  (userImg != null) {
-                currImage = new ImageIcon(userImg).getImage();
-                this.loaded = true;
-            }
-        }
-    }
-
-    // package-private, used by tests
-    ImageLoader(String path, String defaultPath) {
-        java.net.URL userImg = null;
-
-        if (path != null && !path.isBlank()) {
-            userImg = this.getClass().getResource(path);
-        }
-
-        if (userImg != null) {
-            currImage = new ImageIcon(userImg).getImage();
-            this.loaded = true;
-        } else {
-            this.usingDefault = true;
-            userImg = this.getClass().getResource(defaultPath);
-            if (userImg != null) {
                 currImage = new ImageIcon(userImg).getImage();
                 this.loaded = true;
             }
@@ -68,5 +47,10 @@ public class ImageLoader {
 
     public boolean isUsingDefault() {
         return this.usingDefault;
+    }
+
+    //Methods for testing
+    String getDefaultPath() {
+        return DEFAULT_IMAGE;
     }
 }

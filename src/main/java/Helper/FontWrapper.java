@@ -15,7 +15,7 @@ public class FontWrapper {
         this.fontName = fontName;
 
         if(this.filePath != null) {
-            try (InputStream is = getClass().getResourceAsStream(filePath)) {
+            try (InputStream is = openStream(filePath)) {
                 if (is == null) {
                     System.err.println(fontName + " Font not found! Defaulting to Sans Serif.");
                     // Fallback font
@@ -27,11 +27,9 @@ public class FontWrapper {
                     customFont = baseFont;
                 }
             } catch (IOException e) {
-                System.err.println(fontName + " Font failed to load! Defaulting to Sans Serif.");
-                customFont = FontWrapper.DEFAULT_FONT;
+                this.handleError(fontName, "Font failed to load!");
             } catch (FontFormatException e) {
-                System.err.println(fontName + " Font may be corrupted! Defaulting to Sans Serif.");
-                customFont = FontWrapper.DEFAULT_FONT;
+                this.handleError(fontName, "Font may be corrupted!");
             }
         } else {
             this.customFont = FontWrapper.DEFAULT_FONT;
@@ -40,6 +38,11 @@ public class FontWrapper {
 
     public Font getFont( int size){
         return customFont.deriveFont(Font.PLAIN, size);
+    }
+
+    private void handleError(String name, String message) {
+        System.err.println(name + " " + message + " Defaulting to Sans Serif.");
+        this.customFont = DEFAULT_FONT;
     }
 
     //For unit testing only
@@ -51,5 +54,8 @@ public class FontWrapper {
     }
     public static Font getDefaultFont() {
         return FontWrapper.DEFAULT_FONT;
+    }
+    InputStream openStream(String path) {
+        return getClass().getResourceAsStream(path);
     }
 }

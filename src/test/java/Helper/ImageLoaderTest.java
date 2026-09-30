@@ -35,7 +35,12 @@ public class ImageLoaderTest {
 
     @Test
     void notLoadedWhenDefaultIsAlsoMissing() {
-        ImageLoader loader = new ImageLoader(MISSING, "/images/also_missing.png");
+        ImageLoader loader = new ImageLoader(MISSING) {
+            @Override
+            String getDefaultPath() {
+                return MISSING;
+            }
+        };
 
         assertFalse(loader.isLoaded());
         assertNull(loader.getImage());

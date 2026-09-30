@@ -40,11 +40,12 @@ public class GameSettings {
             return value;
         }
         float scale = getScale();
-        //Checks for 0 so we don't divide by zero
-        if (scale <= 0) {
-            return value;
-        }
         return Math.max(1, Math.round(value / scale));
     }
 
+    //For Unit Testing
+    // Private constructor to hide the implicit public one and prevent instantiation
+    private GameSettings() {
+        throw new UnsupportedOperationException("GameSettings.java Can not be instantiation.");
+    }
 }
