@@ -1,9 +1,8 @@
 name: Generating JavaDocs
 
 on:
-  workflow_run:
-    workflows: [ "Checking Code Style" ]   # must match the name: above exactly
-    types: [ completed ]
+  push:
+    branches: [main]
 
 jobs:
   publish-docs:
