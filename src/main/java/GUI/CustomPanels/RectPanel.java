@@ -25,9 +25,9 @@ public class RectPanel extends JPanel {
      * Constructs the rectangular panel using the values provided.
      * @param xCoord The x of the top left of the panel.
      * @param yCoord The y of the top left of the panel.
-     * @param width
-     * @param height
-     * @param fillColor
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param fillColor The color to fill the shape.
      */
     public RectPanel(int xCoord, int yCoord, int width, int height, Color fillColor) {
         this.xCoord = xCoord;
@@ -42,16 +42,43 @@ public class RectPanel extends JPanel {
         this.setOpaque(false);
     }
 
+    /**
+     * Constructs the rectangular panel using the values provided. The border will be drawn with a thickness of 1.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param fillColor The color to fill the shape.
+     * @param borderColor The color of the border.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, Color fillColor, Color borderColor) {
         this(xCoord, yCoord, width, height, fillColor, borderColor, 1);
     }
 
+    /**
+     * Constructs the rectangular panel using the values provided, including border color and custom thickness.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param fillColor The color to fill the shape.
+     * @param borderColor The color of the border.
+     * @param thickness The thickness of the border.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, Color fillColor, Color borderColor, int thickness) {
         this(xCoord, yCoord, width, height, fillColor);
         this.borderColor = borderColor;
         this.thickness = thickness;
     }
 
+    /**
+     * Constructs the rectangular panel using an image loaded from the specified path.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param imagePath The path to the image to display.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, String imagePath) {
         this.xCoord = xCoord;
         this.yCoord = yCoord;
@@ -64,6 +91,16 @@ public class RectPanel extends JPanel {
         this.setOpaque(false);
     }
 
+    /**
+     * Constructs the rectangular panel using an image loaded from the specified path, along with a border color and thickness.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param imagePath The path to the image to display.
+     * @param borderColor The color of the border.
+     * @param thickness The thickness of the border.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, String imagePath, Color borderColor, int thickness) {
         this(xCoord, yCoord, width, height, imagePath);
         this.borderColor = borderColor;

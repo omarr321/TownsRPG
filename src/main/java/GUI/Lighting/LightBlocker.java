@@ -16,10 +16,11 @@ import java.util.Arrays;
 
 /**
  * An empty, invisible panel that lives in a {@link LightLayer} and marks an area that affects light.
- * It never draws anything. Its bounds say where it is, and its tag says what it does to light.
+ * It never draws anything directly on screen. Its bounds define its position, and its tag determines
+ * how it interacts with light.
  * <p>
- * It can also follow a component in the drawn layer, so it moves when that component moves.
- * </p>
+ * It can also dynamically track a component or a room object in the drawn layer, allowing shadows
+ * and light blocking to update automatically when objects move or animate.
  */
 public class LightBlocker extends JPanel {
     private LightTag tag;
@@ -45,12 +46,12 @@ public class LightBlocker extends JPanel {
     private int[] objPanelKey;
 
     /**
-     * Makes a blocker at a fixed spot.
+     * Constructs a blocker at a fixed position and size.
      * @param x The x position, in the same coordinates as the drawn layer.
      * @param y The y position, in the same coordinates as the drawn layer.
-     * @param width The width.
-     * @param height The height.
-     * @param tag What this blocker does to light.
+     * @param width The width of the blocker area.
+     * @param height The height of the blocker area.
+     * @param tag The {@link LightTag} defining what this blocker does to light.
      */
     public LightBlocker(int x, int y, int width, int height, LightTag tag) {
         super(null);
@@ -60,21 +61,32 @@ public class LightBlocker extends JPanel {
     }
 
     /**
-     * Makes a blocker that follows a component in the drawn layer.
-     * Every frame it uses that component's current bounds, so moving the component moves its shadow.
-     * The component should be placed directly in the drawn panel so the coordinates match.
-     * @param follow The drawn component to follow.
-     * @param tag What this blocker does to light.
+     * Constructs a blocker that tracks a component in the drawn layer.
+     * @param follow The drawn Component to follow.
+     * @param tag The {@link LightTag} defining what this blocker does to light.
      */
     public LightBlocker(Component follow, LightTag tag) {
         this(follow.getX(), follow.getY(), follow.getWidth(), follow.getHeight(), tag);
         this.follow = follow;
     }
 
+    /**
+     * Constructs a blocker that tracks a component in the drawn layer with a specified reflection distance.
+     * @param follow The drawn Component to follow.
+     * @param tag The {@link LightTag} defining what this blocker does to light.
+     * @param reflectDist The reflection distance configuration.
+     */
     public LightBlocker(Component follow, LightTag tag, int reflectDist) {
         this(follow, tag);
         setReflectDist(reflectDist);
     }
+
+    /**
+     * Constructs a blocker that tracks a component in the drawn layer with a specified lit blend factor.
+     * @param follow The drawn Component to follow.
+     * @param tag The {@link LightTag} defining what this blocker does to light.
+     * @param litBlend The lighting blend factor.
+     */
     public LightBlocker(Component follow, LightTag tag, float litBlend) {
         this(follow, tag);
         setLitBlend(litBlend);
@@ -82,8 +94,9 @@ public class LightBlocker extends JPanel {
 
 
     /**
-     * Makes a blocker shaped like a room object's corners. It follows the object, so if its corners
-     * move, the blocker moves with them.
+     * Constructs a blocker shaped like a room object's corner coordinates.
+     * @param follow The {@link BasicObj} room object to follow.
+     * @param tag The {@link LightTag} defining what this blocker does to light.
      */
     public LightBlocker(BasicObj follow, LightTag tag) {
         this(0, 0, 0, 0, tag);
@@ -92,47 +105,84 @@ public class LightBlocker extends JPanel {
         this.setBounds(r);
     }
 
+    /**
+     * Constructs a blocker shaped like a room object's corners with a specified reflection distance.
+     * @param follow The {@link BasicObj} room object to follow.
+     * @param tag The {@link LightTag} defining what this blocker does to light.
+     * @param reflectDist The reflection distance configuration.
+     */
     public LightBlocker(BasicObj follow, LightTag tag, int reflectDist) {
         this(follow, tag);
         setReflectDist(reflectDist);
     }
 
+    /**
+     * Gets the light tag representing this blocker's behavior.
+     * @return The LightTag enum value.
+     */
     public LightTag getTag() {
         return tag;
     }
 
+    /**
+     * Sets the light tag representing this blocker's behavior.
+     * @param tag The new LightTag to set.
+     */
     public void setTag(LightTag tag) {
         this.tag = tag;
     }
 
+    /**
+     * Gets the component being tracked by this blocker, if any.
+     * @return The followed Component, or null.
+     */
     public Component getFollow() {
         return follow;
     }
 
-    /** Sets the drawn component to follow, or null to go back to this blocker's own bounds. */
+    /**
+     * Sets the drawn component to follow, or null to revert to the blocker's own fixed bounds.
+     * @param follow The Component to follow.
+     */
     public void setFollow(Component follow) {
         this.follow = follow;
     }
 
+    /**
+     * Gets the reflection distance for this blocker.
+     * @return The reflection distance, or -1 if not set.
+     */
     public int getReflectDist() {
         return reflectDist;
     }
 
+    /**
+     * Sets the reflection distance for this blocker.
+     * @param reflectDist The reflection distance value (values <= 0 are normalized to -1).
+     */
     public void setReflectDist(int reflectDist) {
         this.reflectDist = reflectDist > 0 ? reflectDist : -1;
     }
 
+    /**
+     * Gets the lit blend factor for this blocker.
+     * @return The lit blend float value, or -1f if not set.
+     */
     public float getLitBlend() {
         return this.litBlend;
     }
 
+    /**
+     * Sets the lit blend factor for this blocker.
+     * @param litBlend The lit blend value (clamped between 0.0 and 1.0; values < 0 normalize to -1f).
+     */
     public void setLitBlend(float litBlend) {
         this.litBlend = litBlend < 0f ? -1f : Math.min(1f, litBlend);
     }
 
     /**
-     * The area this blocker covers right now.
-     * @return The followed component's bounds if there is one, otherwise this blocker's own bounds.
+     * Calculates and returns the screen area currently covered by this blocker.
+     * @return A Rectangle representing the active light bounds.
      */
     public Rectangle getLightBounds() {
         if (follow != null) {
@@ -190,11 +240,9 @@ public class LightBlocker extends JPanel {
     }
 
     /**
-     * The followed component drawn on its own onto a transparent image, so the alpha shows its real shape.
-     * Only the given area is drawn (normally the on-screen part), and the image's top-left is that area's
-     * top-left. Redrawn on every call, so animated sprites stay up to date.
-     * @param area The part to draw, in the drawn layer's coordinates.
-     * @return The image, or null if this blocker follows nothing (the whole box then counts as solid).
+     * Renders the followed component onto a transparent image to extract alpha/transparency data for accurate lighting.
+     * @param area The region to draw, in layer coordinates.
+     * @return A BufferedImage containing the alpha shape, or null if nothing is followed.
      */
     public BufferedImage getAlphaImage(Rectangle area) {
         if (area == null || area.isEmpty()) {
@@ -259,29 +307,31 @@ public class LightBlocker extends JPanel {
     }
 
     /**
-     * Tells the blocker its followed component now looks different (a new image, a changed sprite), so its
-     * alpha is redrawn next frame. Moving or resizing is picked up on its own; this is only for changes in
-     * what's drawn.
+     * Marks the blocker's alpha data as dirty, forcing a redraw of its shape mask on the next frame.
      */
     public void markAlphaDirty() {
         this.alphaDirty = true;
     }
 
     /**
-     * For followed components whose drawing changes every frame (animated sprites): redraws the alpha every
-     * frame instead of caching it. Slower, so only switch this on for blockers that need it.
+     * Sets whether this blocker tracks animated content that changes every frame.
+     * @param animated True to disable caching and redraw the alpha image every frame.
      */
     public void setAnimated(boolean animated) {
         this.animated = animated;
     }
 
+    /**
+     * Checks if this blocker is configured for animated content.
+     * @return True if animation tracking is enabled, false otherwise.
+     */
     public boolean isAnimated() {
         return animated;
     }
 
     /**
-     * Whether this blocker should affect light this frame.
-     * Call setVisible(false) to switch a blocker off; a followed component that is hidden stops blocking too.
+     * Determines whether this light blocker is currently active and affecting light.
+     * @return True if visible, active, and covering a non-empty area; false otherwise.
      */
     public boolean isActive() {
         if (!isVisible()) {
@@ -295,7 +345,7 @@ public class LightBlocker extends JPanel {
     }
 
     /**
-     * How a blocker reacts to light.
+     * Defines how a light blocker reacts to light rays.
      */
     public enum LightTag {
         /** Stops all light, casting a shadow behind it. */

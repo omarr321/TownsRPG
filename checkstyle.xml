@@ -12,30 +12,6 @@
     </module>
 
     <module name="TreeWalker">
-        <!-- Suppress MissingJavadocMethod for all methods inside interfaces -->
-        <module name="SuppressionXpathSingleFilter">
-            <property name="checks" value="MissingJavadocMethod"/>
-            <property name="query" value="//INTERFACE_DEF//METHOD_DEF"/>
-        </module>
-
-        <!-- Suppress MissingJavadocMethod for all methods inside abstract classes -->
-        <module name="SuppressionXpathSingleFilter">
-            <property name="checks" value="MissingJavadocMethod"/>
-            <property name="query" value="//CLASS_DEF[MODIFIERS//LITERAL_ABSTRACT]//METHOD_DEF"/>
-        </module>
-
-        <!-- Suppress MissingJavadocType for abstract classes themselves -->
-        <module name="SuppressionXpathSingleFilter">
-            <property name="checks" value="MissingJavadocType"/>
-            <property name="query" value="//CLASS_DEF[MODIFIERS//LITERAL_ABSTRACT]"/>
-        </module>
-
-        <!-- public classes, enums, records (ignoring interfaces entirely via token restriction) -->
-        <module name="MissingJavadocType">
-            <property name="scope" value="public"/>
-            <property name="tokens" value="CLASS_DEF, RECORD_DEF, ENUM_DEF"/>
-        </module>
-
         <!-- public methods and constructors -->
         <module name="MissingJavadocMethod">
             <property name="scope" value="public"/>

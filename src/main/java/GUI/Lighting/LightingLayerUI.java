@@ -12,6 +12,10 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.function.Supplier;
 
+/**
+ * A custom Swing {@link LayerUI} implementation responsible for rendering dynamic lighting,
+ * shadows, and reflections over a component hierarchy, with optional debugging and visualization overlays.
+ */
 public class LightingLayerUI extends LayerUI<JComponent> {
 
     private LightMgmt lightMgmt;
@@ -21,35 +25,72 @@ public class LightingLayerUI extends LayerUI<JComponent> {
     private boolean showInteractable = false;
     private Supplier<List<InteractableObj>> interactables = List::of;
 
+    /**
+     * Constructs a LightingLayerUI with the specified lighting management instance.
+     * @param lightMgmt The {@link LightMgmt} handler used to apply lighting effects.
+     */
     public LightingLayerUI(LightMgmt lightMgmt) {
         this.lightMgmt = lightMgmt;
     }
 
+    /**
+     * Gets the lighting management instance associated with this UI.
+     * @return The active {@link LightMgmt} instance.
+     */
     public LightMgmt getLightMgmt() {
         return lightMgmt;
     }
 
+    /**
+     * Sets the lighting management instance for this UI.
+     * @param lightMgmt The new {@link LightMgmt} instance to use.
+     */
     public void setLightMgmt(LightMgmt lightMgmt) {
         this.lightMgmt = lightMgmt;
     }
 
-    /** When on, outlines every blocker on top of the lit image (red = BLOCK, cyan = REFLECT, gray = switched off). */
+    /**
+     * Enables or disables the visualization outline for light blockers.
+     * <p>
+     * When active, outlines every blocker over the lit image (red = BLOCK, cyan = REFLECT,
+     * green = standard, gray = switched off).
+     *
+     * @param showBlockers True to display blocker outlines, false otherwise.
+     */
     public void setShowBlockers(boolean showBlockers) {
         this.showBlockers = showBlockers;
     }
 
+    /**
+     * Enables or disables the visualization markers for light source positions.
+     * @param showLights True to display light markers, false otherwise.
+     */
     public void setShowLights(boolean showLights) {
         this.showLights = showLights;
     }
 
+    /**
+     * Checks whether blocker outlines are currently being displayed.
+     * @return True if blocker visualization is enabled, false otherwise.
+     */
     public boolean isShowBlockers() {
         return showBlockers;
     }
 
+    /**
+     * Checks whether light position markers are currently being displayed.
+     * @return True if light marker visualization is enabled, false otherwise.
+     */
     public boolean isShowLights() {
         return showLights;
     }
 
+    /**
+     * Paints the layer by capturing the underlying component hierarchy into an off-screen buffer,
+     * applying dynamic lighting effects, drawing it to the screen, and optionally rendering debug overlays.
+     * @param g The Graphics context.
+     * @param c The JComponent being painted.
+     */
     @Override
     public void paint(Graphics g, JComponent c) {
         int width = c.getWidth();
@@ -177,10 +218,18 @@ public class LightingLayerUI extends LayerUI<JComponent> {
         g.dispose();
     }
 
+    /**
+     * Enables or disables the visualization overlay for interactable room objects.
+     * @param showInteractable True to display interactable markers, false otherwise.
+     */
     public void setShowInteractable(boolean showInteractable) {
         this.showInteractable = showInteractable;
     }
 
+    /**
+     * Sets the data supplier used to fetch the list of interactable objects to display.
+     * @param interactables A Supplier providing a List of {@link InteractableObj} items.
+     */
     public void setInteractables(Supplier<List<InteractableObj>> interactables) {
         this.interactables = interactables != null ? interactables : List::of;
     }
