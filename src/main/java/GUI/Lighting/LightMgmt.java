@@ -235,7 +235,7 @@ public class LightMgmt {
      * @param litBlend The new blend factor.
      */
     public void setLitBlend(float litBlend) {
-        this.litBlend = Math.max(0f, Math.min(1f, litBlend));
+        this.litBlend = Math.clamp(litBlend, 0f, 1f);
     }
 
     /**
@@ -371,9 +371,11 @@ public class LightMgmt {
     // ---------------------------------------------------------------
     // Whole image: lights every pixel of an image at once (used by LightingLayerUI)
     // ---------------------------------------------------------------
+
     /**
      * Applies dynamic lighting, shadows, and reflections to an entire image in a single pass.
      * @param image The target BufferedImage to illuminate.
+     * @throws IllegalArgumentException if the image type is not {@code BufferedImage.TYPE_INT_RGB} or {@code BufferedImage.TYPE_INT_ARGB}
      */
     public void applyTo(BufferedImage image) {
         int type = image.getType();

@@ -5,13 +5,20 @@ import Helper.Point;
 
 import java.awt.*;
 
+/**
+ * A single point light source that adds colored, distance-attenuated light to a scene.
+ *
+ * <p>The light has a location, a shape (circular or square), a maximum reach, an optional
+ * inner dead zone where it emits nothing, and a color. Use {@link #getBrightnessAt(int, int)}
+ * to find how bright the light is at any given coordinate.
+ */
 public class LightPoint {
-    private Point loc;
-    private LightShape shape;
-    private int dist;
-    private int deadZone;
-    private int deadZoneFade;
-    private float intensity;
+    private final Point loc;
+    private final LightShape shape;
+    private final int dist;
+    private final int deadZone;
+    private final int deadZoneFade;
+    private final float intensity;
     private float red;
     private float green;
     private float blue;
@@ -136,7 +143,9 @@ public class LightPoint {
      * Defines the geometric spread shape options for light sources.
      */
     public enum LightShape {
+        /** Light spreads outward in a circle, measured by straight-line distance from the source. */
         CIRCLE,
+        /** Light spreads outward in a square, measured by the larger of the horizontal and vertical distances. */
         SQUARE
     }
 }

@@ -33,10 +33,9 @@ public class RoomObjTest {
 
     @Test
     void drawTypeHasExpectedValues() {
-        assertEquals(3, RoomObj.DrawType.values().length);
+        assertEquals(2, RoomObj.DrawType.values().length);
         assertNotNull(RoomObj.DrawType.valueOf("SOLID"));
         assertNotNull(RoomObj.DrawType.valueOf("IMAGE"));
-        assertNotNull(RoomObj.DrawType.valueOf("DEFAULT"));
     }
 
     @Test

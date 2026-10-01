@@ -352,6 +352,7 @@ public class LightBlocker extends JPanel {
         BLOCK,
         /** Stops all light like BLOCK, but the lit edges glow outward with some of the light that hit them. */
         REFLECT,
+        /** Staps all light like BLOCK, but the whole obj glows the average of all lights hitting it.*/
         LIT
     }
 

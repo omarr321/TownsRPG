@@ -97,9 +97,18 @@ public class LightLayer extends JPanel {
     }
 
     /**
-     * The closest spot to (x, y) that isn't inside any active blocker, staying inside a width x height area.
-     * Uses the same edge rule as LightMgmt (edges count as inside), so a light placed here is always blocked properly.
-     * @return (x, y) itself if it's already free, or null if there is no free spot at all.
+     * Finds the closest spot to ({@code x}, {@code y}) that isn't inside any active blocker,
+     * staying inside a {@code width} by {@code height} area.
+     *
+     * <p>Uses the same edge rule as LightMgmt (edges count as inside), so a light placed
+     * here is always blocked properly.
+     *
+     * @param x      the x coordinate of the desired spot
+     * @param y      the y coordinate of the desired spot
+     * @param width  the width of the area to stay inside; valid x values are {@code 0} to {@code width - 1}
+     * @param height the height of the area to stay inside; valid y values are {@code 0} to {@code height - 1}
+     * @return the point ({@code x}, {@code y}) itself if it is already free, the nearest free
+     *         point if it is not, or {@code null} if there is no free spot at all
      */
     public Point nearestFreePoint(int x, int y, int width, int height) {
         List<Rectangle> rects = new ArrayList<>();
