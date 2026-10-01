@@ -1,11 +1,14 @@
 package Helper;
 
 /**
- * Static setting of the game that is shared accross the engine.
+ * Static setting of the game that is shared across the engine.
  */
 public class GameSettings {
+    /** Whether the game runs in full-screen mode instead of a window. */
     public static boolean fullScreen = false;
+    /** The width of the screen or game window in pixels. */
     public static int screenWidth = 0;
+    /** The height of the screen or game window in pixels. */
     public static int screenHeight = 0;
 
     /**
@@ -30,6 +33,9 @@ public class GameSettings {
     /**
      * Converts a size in reference-screen pixels to real screen pixels.
      * Values of 0 or less are returned unchanged, and positive values never scale below 1.
+     *
+     * @param value the size in reference-screen pixels
+     * @return the size in real screen pixels, or {@code value} itself if it is 0 or less
      */
     public static int scale(int value) {
         if (value <= 0) {
@@ -41,6 +47,9 @@ public class GameSettings {
     /**
      * Converts a size in real screen pixels to reference-screen pixels.
      * Values of 0 or less are returned unchanged, and positive values never scale below 1.
+     *
+     * @param value the size in real screen pixels
+     * @return the size in reference-screen pixels, or {@code value} itself if it is 0 or less
      */
     public static int descale(int value) {
         if (value <= 0) {

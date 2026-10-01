@@ -21,16 +21,35 @@ import java.awt.event.*;
 import java.util.Objects;
 
 /**
- * This class handles all the drawing to the screen and user input.
+ * Entry point and container for the game's windows.
+ *
+ * <p>This class holds the nested window classes that draw to the screen and handle user input:
+ * <ul>
+ *   <li>{@link GraphicWindow}: asks for the display settings when the program starts.</li>
+ *   <li>{@link GameWindow}: the main game window.</li>
+ *   <li>{@link DebugWindow}: a menu of test screens for shapes, rooms, and lighting.</li>
+ * </ul>
+ *
+ * <p>The chosen settings are stored in {@link GameSettings}. Run {@link #main(String[])}
+ * to start the program.
  */
 public class DisplayMgmt {
     private static final FontWrapper tuffyBold = new FontWrapper("/fonts/Tuffy_Bold.ttf", "Tuffy Bold");
     private static final FontWrapper tuffyPlain = new FontWrapper("/fonts/Tuffy.ttf","Tuffy Plain");
     /**
-     * This window asks for user graphic setting then moves to the game with the setting set.
+     * The window shown at startup that asks for the display settings, then opens the game.
+     *
+     * <p>The player picks fullscreen or windowed mode. A resolution
+     * (2560 x 1440, 1920 x 1080, or 1280 x 720) can only be chosen in windowed mode.
+     * The choices are saved to {@link GameSettings}, which defaults to fullscreen at 3840 x 2160.
+     *
+     * <p>Clicking Confirm closes this window and opens a {@link GameWindow}. Holding
+     * Ctrl while clicking opens the {@link DebugWindow} instead.
      */
     public static class GraphicWindow extends JFrame {
-
+        /**
+         * Creates and shows the graphics options window, defaulting to 3840 x 2160 fullscreen.
+         */
         public GraphicWindow(){
             super("Graphics");
 
@@ -131,12 +150,21 @@ public class DisplayMgmt {
         }
     }
 
+    /**
+     * A debug window with a menu of test screens for drawing shapes, rooms, and lighting.
+     *
+     * <p>Press Escape to go back to the menu (or to the graphics window from the menu),
+     * and L to cycle between the lit versions of the room tests.
+     */
     public static class DebugWindow extends JFrame {
         private final CardLayout cardLayout;
         private final JPanel cardContainer;
         private String currentCard = "";
         private final Player player = new Player("Debug User");
 
+        /**
+         * Creates and shows the debug window using the current {@link GameSettings} display options.
+         */
         public DebugWindow() {
             setTitle("Debug");
             if (GameSettings.fullScreen) {
@@ -188,16 +216,12 @@ public class DisplayMgmt {
             actionMap.put("lightAction",new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    if (currentCard.equals("DEBUG_ROOM_TEST")) {
-                        switchToCard("DEBUG_ROOM_LIGHT_TEST");
-                    } else if (currentCard.equals("DEBUG_ROOM_LIGHT_TEST")) {
-                        switchToCard("DEBUG_ROOM_BLOCKERS_TEST");
-                    } else if (currentCard.equals("DEBUG_ROOM_BLOCKERS_TEST")) {
-                        switchToCard("DEBUG_ROOM_TEST");
-                    } else if (currentCard.equals("BASIC_ROOM_TEST")) {
-                        switchToCard("BASIC_ROOM_DEBUG_TEST");
-                    } else if (currentCard.equals("BASIC_ROOM_DEBUG_TEST")) {
-                        switchToCard("BASIC_ROOM_TEST");
+                    switch (currentCard) {
+                        case "DEBUG_ROOM_TEST" -> switchToCard("DEBUG_ROOM_LIGHT_TEST");
+                        case "DEBUG_ROOM_LIGHT_TEST" -> switchToCard("DEBUG_ROOM_BLOCKERS_TEST");
+                        case "DEBUG_ROOM_BLOCKERS_TEST" -> switchToCard("DEBUG_ROOM_TEST");
+                        case "BASIC_ROOM_TEST" -> switchToCard("BASIC_ROOM_DEBUG_TEST");
+                        case "BASIC_ROOM_DEBUG_TEST" -> switchToCard("BASIC_ROOM_TEST");
                     }
                 }
             });
@@ -205,6 +229,11 @@ public class DisplayMgmt {
             setVisible(true);
         }
 
+        /**
+         * Switches the window to show the given test screen.
+         *
+         * @param card the name of the card to show, such as {@code "DEBUG_MAIN"}
+         */
         public void switchToCard(String card) {
             this.currentCard = card;
             this.cardLayout.show(cardContainer, card);
@@ -816,7 +845,13 @@ public class DisplayMgmt {
         }
     }
 
+    /**
+     * The main game window, opened after the graphics settings are confirmed.
+     */
     public static class GameWindow extends JFrame {
+        /**
+         * Creates and shows the game window using the current {@link GameSettings} display options.
+         */
         public GameWindow() {
             setTitle("Game Window");
             if (GameSettings.fullScreen) {
@@ -849,6 +884,11 @@ public class DisplayMgmt {
         }
     }
 
+    /**
+     * Starts the program by opening the graphics options window.
+     *
+     * @param args the command-line arguments, which are not used
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(GraphicWindow::new);
     }

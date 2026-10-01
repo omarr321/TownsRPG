@@ -11,7 +11,7 @@ import java.awt.image.DataBufferInt;
  * This class draws a 4 point shape to the screen using pixel points. This can be shaded in or filled with an image.
  */
 public class QuadrilateralPanel extends JPanel {
-    private Point[] points;
+    private final Point[] points;
     private Color borderColor;
     private Color fillColor;
     private int thickness;
@@ -360,13 +360,17 @@ public class QuadrilateralPanel extends JPanel {
      * Converts human-readable text to point locations as ints.
      */
     public enum PointLocation {
+        /** The top left point of the shape.*/
         TOP_LEFT(0),
+        /** The top right point of the shape.*/
         TOP_RIGHT(1),
+        /** The bottom right point of the shape.*/
         BOTTOM_RIGHT(2),
+        /** The bottom left point of the shape.*/
         BOTTOM_LEFT(3);
 
         private final int num;
-        private PointLocation(int num){
+        PointLocation(int num){
             this.num = num;
         }
 

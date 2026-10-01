@@ -4,11 +4,14 @@ package Engine.Interactions;
  * This class is for any Interactable class. Any class that needs interaction must extend Interactable.
  */
 public abstract class Interactable {
+    /** The message displayed to the player when this object is triggered. */
     protected String message;
+
+    /** The next interactable to trigger after this one, or {@code null} if there is none. */
     protected Interactable nextTrigger = null;
 
     /**
-     * Creates a basic interact with the message,
+     * Creates a basic interact with the message.
      * @param message The message that is output when the obj is triggered.
      */
     public Interactable(String message) {

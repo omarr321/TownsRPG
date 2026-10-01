@@ -12,6 +12,7 @@ import java.awt.*;
  * {@link RoomPart} designation and manages properties like color, images, and warping.
  */
 public abstract class RoomComponent extends RoomObj {
+    /** The part of the room (ceiling, floor, or a wall) that this component represents. */
     protected RoomComponent.RoomPart roomPart;
 
     /**
@@ -55,11 +56,17 @@ public abstract class RoomComponent extends RoomObj {
      * Defines the standard structural parts of a room and their corresponding coordinate indices.
      */
     public enum RoomPart {
+        /** The top surface of the room. */
         CEILING(new int[]{4, 5, 1, 0}),
+        /** The bottom surface of the room that the player walks on. */
         FLOOR(new int[]{3, 2, 6, 7}),
+        /** The wall at the far end of the room, facing the viewer. */
         BACK_WALL(new int[]{0, 1, 2, 3}),
+        /** The wall on the left side of the room. */
         LEFT_WALL(new int[]{4, 0, 3, 7}),
+        /** The wall on the right side of the room. */
         RIGHT_WALL(new int[]{1, 5, 6, 2}),
+        /** The wall on the viewer's side of the room, with all indices set to 0 so that nothing is drawn. */
         FOURTH_WALL(new int[]{0, 0, 0, 0});
 
         private final int[] arr;

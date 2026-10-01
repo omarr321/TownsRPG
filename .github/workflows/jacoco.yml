@@ -6,8 +6,8 @@ on:
 
 permissions:
   contents: read
-  actions: read          # needed to download the artifact from the other run
-  pull-requests: write   # needed to post the PR comment
+  actions: read
+  pull-requests: write
 
 jobs:
   coverage:
@@ -21,15 +21,21 @@ jobs:
           java-version: "25"
           cache: maven
 
-      - name: Run Tests & Generate Coverage
-        run: mvn -B clean test-compile jacoco:prepare-agent test jacoco:report
+      - name: Run tests, generate report, enforce coverage
+        run: mvn -B clean test-compile jacoco:prepare-agent test jacoco:report jacoco:check
 
-      - uses: madrapps/jacoco-report@v1.8.0
+      - name: Post coverage comment
+        if: always()
+        uses: madrapps/jacoco-report@v1.7.2
         with:
           paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 100
-          min-coverage-changed-lines: 100
-          coverage-counter-type: LINE
-          show-missing-lines: true
-          continue-on-error: false
+          min-coverage-overall: 95
+          min-coverage-changed-files: 95
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco

@@ -6,15 +6,38 @@
     <!-- error severity is what makes the build fail -->
     <property name="severity" value="error"/>
 
-    <!-- Ignore all checks for DisplayMgmt.java located in the GUI folder -->
-    <module name="SuppressionSingleFilter">
-        <property name="files" value=".*[/\\]GUI[/\\]DisplayMgmt\.java$"/>
-    </module>
-
     <module name="TreeWalker">
-        <!-- public methods and constructors -->
-        <module name="MissingJavadocMethod">
-            <property name="scope" value="public"/>
+        <!-- Missing comments on classes/interfaces/enums (incl. nested ones) -->
+        <module name="MissingJavadocType">
+            <property name="scope" value="protected"/>
         </module>
+
+        <!-- Missing comments on methods and constructors -->
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="protected"/>
+        </module>
+
+        <!-- Missing comments on fields -->
+        <module name="JavadocVariable">
+            <property name="accessModifiers" value="public, protected"/>
+        </module>
+
+        <!-- @param / @return / @throws present and correct -->
+        <module name="JavadocMethod">
+            <property name="accessModifiers" value="public, protected"/>
+            <property name="validateThrows" value="true"/>
+        </module>
+
+        <!-- Type-level tags (@param <T>, etc.) -->
+        <module name="JavadocType"/>
+
+        <!-- Replaces JavadocStyle: first sentence exists and ends properly -->
+        <module name="SummaryJavadoc"/>
+
+        <!-- Tags with no description, e.g. "@param x" -->
+        <module name="NonEmptyAtclauseDescription"/>
+
+        <!-- Javadoc in the wrong place -->
+        <module name="InvalidJavadocPosition"/>
     </module>
 </module>

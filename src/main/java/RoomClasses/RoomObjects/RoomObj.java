@@ -15,13 +15,20 @@ import java.util.Map;
  * rendering properties (solid color or image with optional warping), and lighting capabilities.
  */
 public abstract class RoomObj {
+    /** Whether the image is warped to fit the shape's corners. Defaults to {@code true}. */
     protected boolean warped = true;
+    /** How this object is drawn: a solid color, an image, or the default. */
     protected RoomComponent.DrawType type;
+    /** The solid fill color, or {@code null} if the object is drawn with an image. */
     protected Color color;
+    /** The path to the image drawn on this object, or an empty string if it uses a solid color. */
     protected String imagePath;
+    /** The light blockers attached to this object, keyed by name. */
     protected Map<String, LightBlocker> lightBlockers = new HashMap<>();
+    /** The light points attached to this object, keyed by name. */
     protected Map<String, LightPoint> lightPoints = new HashMap<>();
-    protected Helper.Point[] shapeCorners = new Point[4];
+    /** The four corner points that define this object's shape. */
+    protected Helper.Point[] shapeCorners;
 
     /**
      * Constructs a RoomObj with a solid fill color and specified shape corners.
@@ -164,8 +171,9 @@ public abstract class RoomObj {
      * Defines the types of rendering methods available for walls, ceilings, and other room components.
      */
     public enum DrawType {
+        /** The object is filled with a single solid color. */
         SOLID,
-        IMAGE,
-        DEFAULT
+        /** The object is drawn using an image. */
+        IMAGE
     }
 }
