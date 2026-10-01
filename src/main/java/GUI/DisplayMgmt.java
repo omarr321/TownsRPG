@@ -13,9 +13,16 @@ import RoomClasses.Room;
 import RoomClasses.RoomObjects.BasicObj;
 import RoomClasses.RoomObjects.InteractableObj;
 import RoomClasses.RoomParts.*;
+import com.github.weisj.jsvg.SVGDocument;
+import com.github.weisj.jsvg.parser.SVGLoader;
+import com.github.weisj.jsvg.view.ViewBox;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import java.awt.image.BufferedImage;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Objects;
@@ -34,6 +41,57 @@ import java.util.Objects;
  * to start the program.
  */
 public class DisplayMgmt {
+    /** The icon file, relative to {@code src/main/resources}. */
+    private static final String ICON_PATH = "/branding/icon.svg";
+
+    /** The window icon at several sizes, rendered once and shared by every window. */
+    private static final List<Image> APP_ICONS = loadAppIcons();
+
+    /**
+     * Renders the SVG icon to bitmaps at several sizes so the OS can pick the sharpest one
+     * for the title bar, taskbar, and Alt+Tab.
+     *
+     * @return the rendered icons, or an empty list if the icon could not be loaded
+     */
+    private static List<Image> loadAppIcons() {
+        List<Image> icons = new ArrayList<>();
+        try {
+            URL url = DisplayMgmt.class.getResource(ICON_PATH);
+            if (url == null) {
+                System.err.println("Window icon not found: " + ICON_PATH);
+                return icons;
+            }
+            SVGDocument svg = new SVGLoader().load(url);
+            if (svg == null) {
+                System.err.println("Window icon could not be parsed: " + ICON_PATH);
+                return icons;
+            }
+            for (int size : new int[]{16, 32, 48, 64, 128, 256}) {
+                BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = img.createGraphics();
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                svg.render(null, g, new ViewBox(0, 0, size, size));
+                g.dispose();
+                icons.add(img);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load window icon: " + e);
+        }
+        return icons;
+    }
+
+    /**
+     * Gives a window the shared game icon. Does nothing if the icon failed to load.
+     *
+     * @param frame the window to set the icon on
+     */
+    private static void applyIcon(JFrame frame) {
+        if (!APP_ICONS.isEmpty()) {
+            frame.setIconImages(APP_ICONS);
+        }
+    }
+
+
     /** Not meant to be instantiated. */
     private DisplayMgmt() { }
 
@@ -55,6 +113,7 @@ public class DisplayMgmt {
          */
         public GraphicWindow(){
             super("Graphics");
+            applyIcon(this);
 
             GameSettings.fullScreen = true;
             GameSettings.screenWidth = 3840;
@@ -170,6 +229,7 @@ public class DisplayMgmt {
          */
         public DebugWindow() {
             setTitle("Debug");
+            applyIcon(this);
             if (GameSettings.fullScreen) {
                 GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
                 GraphicsDevice gd = ge.getDefaultScreenDevice();
@@ -857,6 +917,7 @@ public class DisplayMgmt {
          */
         public GameWindow() {
             setTitle("Game Window");
+            applyIcon(this);
             if (GameSettings.fullScreen) {
                 GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
                 GraphicsDevice gd = ge.getDefaultScreenDevice();

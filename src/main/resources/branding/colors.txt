@@ -1,0 +1,21 @@
+TownsRPG Logo Colors
+====================
+
+Icon
+----
+Background tile      #0A0E1A   near-black navy
+Buildings            #4A5470   slate
+Roofs                #7A2E22   dark brick
+Windows              #D9822B   amber
+Sun                  #A85A1E   burnt orange
+Ground               #1F3A2E   deep green
+Path                 #39435C   dark slate blue
+Door                 #0A0E1A   near-black navy (same as background)
+
+Wordmark (logo.svg)
+-------------------
+"Towns"              #C4C8D4   light grey
+"RPG"                #D9822B   amber
+"Engine"             #8E94A8   mid grey
+
+Font: Georgia, 'Times New Roman', serif (bold; "Engine" regular weight)
