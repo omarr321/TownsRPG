@@ -37,11 +37,12 @@ jobs:
           cp -r target/reports/apidocs/* _site/javadoc/
           cp -r site/* _site/
           cp README.md _site/README.md
+          ls -R _site | head -40
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: target/reports/apidocs
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
