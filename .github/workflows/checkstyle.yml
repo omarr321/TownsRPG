@@ -1,7 +1,7 @@
-name: checkstyle.yml
+name: Checking Code Style
 on:
   workflow_run:
-    workflows: [ "JaCoCo Coverage" ]   # must match the name: above exactly
+    workflows: [ "Checking JaCoCo Coverage" ]   # must match the name: above exactly
     types: [ completed ]
 
 jobs:

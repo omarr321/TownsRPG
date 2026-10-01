@@ -1,0 +1,36 @@
+name: Generating JavaDocs
+
+on:
+  workflow_run:
+    workflows: [ "Checking Code Style" ]   # must match the name: above exactly
+    types: [ completed ]
+
+jobs:
+  publish-docs:
+    runs-on: ubuntu-latest
+
+    # Required permissions to push the documentation back to the repository
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Generate Javadocs via Maven
+        run: mvn javadoc:javadoc
+
+      - name: Deploy to GitHub Pages 🚀
+        uses: MathieuSoysal/Javadoc-publisher.yml@v3.0.2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          javadoc-branch: javadoc
+          target-folder: docs
+          project: maven

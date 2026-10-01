@@ -1,8 +1,8 @@
-name: JaCoCo Coverage
+name: Checking JaCoCo Coverage
 
 on:
   workflow_run:
-    workflows: ["JUnit Tests"]   # must match the name: above exactly
+    workflows: ["Checking JUnit Tests"]   # must match the name: above exactly
     types: [completed]
 
 permissions:

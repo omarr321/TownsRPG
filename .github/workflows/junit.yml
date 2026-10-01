@@ -1,4 +1,4 @@
-name: JUnit Tests
+name: Checking JUnit Tests
 
 on:
   push:
