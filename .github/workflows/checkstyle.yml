@@ -1,8 +1,7 @@
 name: Checking Code Style
 on:
-  workflow_run:
-    workflows: [ "Checking JaCoCo Coverage" ]   # must match the name: above exactly
-    types: [ completed ]
+  pull_request:
+    branches: [main]
 
 jobs:
   verify:

@@ -1,9 +1,8 @@
 name: Checking JaCoCo Coverage
 
 on:
-  workflow_run:
-    workflows: ["Checking JUnit Tests"]   # must match the name: above exactly
-    types: [completed]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
