@@ -33,9 +33,10 @@ jobs:
 
       - name: Assemble site
         run: |
-            mkdir -p _site/javadoc
-            cp -r target/reports/apidocs/* _site/javadoc/
-            cp -r site/* _site/
+          mkdir -p _site/javadoc
+          cp -r target/reports/apidocs/* _site/javadoc/
+          cp -r site/* _site/
+          cp README.md _site/README.md
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
