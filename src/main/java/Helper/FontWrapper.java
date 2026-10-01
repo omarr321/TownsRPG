@@ -4,12 +4,20 @@ import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * This is a wrapper for loading font from the disk.
+ */
 public class FontWrapper {
     private String filePath;
     private String fontName;
     private final static Font DEFAULT_FONT = new Font(Font.SANS_SERIF,Font.PLAIN,16);
     private Font customFont;
 
+    /**
+     * Construct the FontWrapper with file path and font name provied.
+     * @param filePath The path to the font file. Normally this is a .ttf.
+     * @param fontName The name of the font, this is only used for error messages.
+     */
     public FontWrapper(String filePath, String fontName) {
         this.filePath = filePath;
         this.fontName = fontName;
@@ -36,6 +44,11 @@ public class FontWrapper {
         }
     }
 
+    /**
+     * Returns a ready to use font of the size provided.
+     * @param size The size of the font.
+     * @return The font of the size provided.
+     */
     public Font getFont( int size){
         return customFont.deriveFont(Font.PLAIN, size);
     }
@@ -52,6 +65,11 @@ public class FontWrapper {
     String getFontName() {
         return this.fontName;
     }
+
+    /**
+     * Returns the default font for when a font fails to load.
+     * @return The default font.
+     */
     public static Font getDefaultFont() {
         return FontWrapper.DEFAULT_FONT;
     }

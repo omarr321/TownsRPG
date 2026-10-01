@@ -15,42 +15,77 @@ import java.util.List;
  */
 public class LightLayer extends JPanel {
 
+    /**
+     * Constructs an empty light layer with no size.
+     */
     public LightLayer() {
         super(null);
         this.setOpaque(false);
     }
 
-    /** Makes a light layer the same size as the drawn layer. */
+    /**
+     * Constructs an empty light layer with a size of the provided width and height.
+     * @param width - The width of the light layer.
+     * @param height - The height of the light layer.
+     */
     public LightLayer(int width, int height) {
         this();
         this.setSize(width, height);
         this.setPreferredSize(new Dimension(width, height));
     }
 
-    /** Adds a blocker at a fixed spot. */
+    /**
+     * Adds a LightBlocker to the Light layer using the provided dimensions.
+     * @param x The X of the top left corner of the LightBlocker.
+     * @param y The Y of the top left corner of the LightBlocker.
+     * @param width The width of the LightBlocker.
+     * @param height The height of the LightBlocker.
+     * @param tag The tag of the LightBLoker.
+     * @return The LightBlocker that was added and created.
+     */
     public LightBlocker addBlocker(int x, int y, int width, int height, LightTag tag) {
         return addBlocker(new LightBlocker(x, y, width, height, tag));
     }
 
-    /** Adds a blocker that follows a component in the drawn layer. */
+    /**
+     * Adds a LightBlocker to the Light layer. This LightBlocker will follow the Component provided.
+     * @param follow The component to follow.
+     * @param tag The tag for what type of light it is.
+     * @return The Blocker that was added and created.
+     */
     public LightBlocker addBlocker(Component follow, LightTag tag) {
         return addBlocker(new LightBlocker(follow, tag));
     }
 
+    /**
+     * Adds a LightBlocker to the Light layer.
+     * @param blocker The blocker to add.
+     * @return The Blocker that was provided.
+     */
     public LightBlocker addBlocker(LightBlocker blocker) {
         this.add(blocker);
         return blocker;
     }
 
+    /**
+     * Removes a blocker from the light layer.
+     * @param blocker The blocker to remove from the light layer.
+     */
     public void removeBlocker(LightBlocker blocker) {
         this.remove(blocker);
     }
 
+    /**
+     * Removes all blockers from the light layer.
+     */
     public void clearBlockers() {
         this.removeAll();
     }
 
-    /** Every blocker in this layer, whether active or not. */
+    /**
+     * Gets the blocker contained in the light layer.
+     * @return A list of all LightBlockers in the light layer.
+     */
     public List<LightBlocker> getBlockers() {
         List<LightBlocker> blockers = new ArrayList<>();
         for (Component c : getComponents()) {

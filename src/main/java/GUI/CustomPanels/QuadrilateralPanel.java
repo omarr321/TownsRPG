@@ -24,6 +24,11 @@ public class QuadrilateralPanel extends JPanel {
     private BufferedImage warpCache;  // warped pixels for the visible area only
     private Rectangle warpCacheRect;  // the part of the panel that warpCache covers
 
+    /**
+     * Creates a new QuadrilateralPanel with the points provided and with the fill color provided.
+     * @param points The 4 points of the shape.
+     * @param fillColor The fill color of the shape.
+     */
     public QuadrilateralPanel(Point[] points, Color fillColor) {
         this.points = points;
         this.fillColor = fillColor;
@@ -34,10 +39,23 @@ public class QuadrilateralPanel extends JPanel {
         this.setOpaque(false);
     }
 
+    /**
+     * Creates a new QuadrilateralPanel with the points provided and with the fill color provided and a border of thickness of 1 with the BorderColor provided.
+     * @param points The 4 points of the shape.
+     * @param fillColor The fill color of the shape.
+     * @param borderColor The color of the border drawn on the edge of the shape.
+     */
     public QuadrilateralPanel(Point[] points, Color fillColor, Color borderColor) {
         this(points, fillColor, borderColor, 1);
     }
 
+    /**
+     * Creates a new QuadrilateralPanel with the points provided and with the fill color provided and a border of the thickness provided with the BorderColor provided.
+     * @param points The 4 points of the shape.
+     * @param fillColor The fill color of the shape.
+     * @param borderColor The color of the border drawn on the edge of the shape.
+     * @param thickness The thickness of the border that is drawn.
+     */
     public QuadrilateralPanel(Point[] points, Color fillColor, Color borderColor, int thickness) {
         this(points, fillColor);
         this.borderColor = borderColor;
@@ -52,6 +70,11 @@ public class QuadrilateralPanel extends JPanel {
         this.setBounds(newX, newY, newW, newH);
     }
 
+    /**
+     * Creates a QuadrilateralPanel with the points provided and the image provided.
+     * @param points The 4 points of the shape.
+     * @param imagePath The path to the image.
+     */
     public QuadrilateralPanel(Point[] points, String imagePath) {
         this.points = points;
         this.imagePath = imagePath;
@@ -61,10 +84,23 @@ public class QuadrilateralPanel extends JPanel {
         this.setOpaque(false);
     }
 
+    /**
+     * Creates a QuadrilateralPanel with the points provided and the image provided and a border of thickness of 1 with the BorderColor provided.
+     * @param points The 4 points of the shape.
+     * @param imagePath The path to the image.
+     * @param borderColor The color of the border drawn on the edge of the shape.
+     */
     public QuadrilateralPanel(Point[] points, String imagePath, Color borderColor) {
         this(points, imagePath, borderColor, 1);
     }
 
+    /**
+     * Creates a QuadrilateralPanel with the points provided and the image provided and a border of the thickness provided with the BorderColor provided.
+     * @param points The 4 points of the shape.
+     * @param imagePath The path to the image.
+     * @param borderColor The color of the border drawn on the edge of the shape.
+     * @param thickness The thickness of the border that is drawn.
+     */
     public QuadrilateralPanel(Point[] points, String imagePath, Color borderColor, int thickness) {
         this(points, imagePath);
         this.borderColor = borderColor;
@@ -79,6 +115,10 @@ public class QuadrilateralPanel extends JPanel {
         this.setBounds(newX, newY, newW, newH);
     }
 
+    /**
+     * Set if the image is warped so it stretches and shinks to fit the shape.
+     * @param val False means it will not warp. True mean it will.
+     */
     public void setImageWarp(boolean val) {
         this.imageWarp = val;
     }
@@ -303,6 +343,11 @@ public class QuadrilateralPanel extends JPanel {
         return new double[]{res[0], res[1], res[2], res[3], res[4], res[5], res[6], res[7], 1.0};
     }
 
+    /**
+     * Returns the point at the point location provided.
+     * @param p The location of the point.
+     * @return The point from that location.
+     */
     public Point getPoint(PointLocation p) {
         return this.points[p.getPointToNum()];
     }
@@ -311,6 +356,9 @@ public class QuadrilateralPanel extends JPanel {
         return new ImageLoader(path);
     }
 
+    /**
+     * Converts human-readable text to point locations as ints.
+     */
     public enum PointLocation {
         TOP_LEFT(0),
         TOP_RIGHT(1),
@@ -322,6 +370,10 @@ public class QuadrilateralPanel extends JPanel {
             this.num = num;
         }
 
+        /**
+         * Returns the int of the point location.
+         * @return The location of the point in the array as an int.
+         */
         public int getPointToNum(){
             return this.num;
         }

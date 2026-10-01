@@ -5,6 +5,9 @@ import Helper.ImageLoader;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * A basic rectangular panel to draw to the screen.
+ */
 public class RectPanel extends JPanel {
     private int xCoord;
     private int yCoord;
@@ -18,6 +21,14 @@ public class RectPanel extends JPanel {
     private boolean usesImage = false;
     private static final String DEFAULT_IMAGE = "/images/DebugImage.png";
 
+    /**
+     * Constructs the rectangular panel using the values provided.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width
+     * @param height
+     * @param fillColor
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, Color fillColor) {
         this.xCoord = xCoord;
         this.yCoord = yCoord;

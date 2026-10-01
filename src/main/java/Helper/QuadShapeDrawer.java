@@ -3,17 +3,28 @@ package Helper;
 import GUI.CustomPanels.QuadrilateralPanel.PointLocation;
 
 /**
- * This class helps make a 4 point shape by you giving the draw angle and length to get the length.
+ * This class helps makes the 4 points of a shape by letting you draw lines.
  */
 public class QuadShapeDrawer {
     final private Point[] points = new Point[4];
     private boolean completed = false;
     private int currP = 1;
 
+    /**
+     * Constructs the drawer with a starting point.
+     * @param startP The point to start at.
+     */
     public  QuadShapeDrawer(Point startP) {
         this.points[0] = startP;
     }
 
+    /**
+     * Calculates a point from a origin point, distance, and angle.
+     * @param point The origin point to start from.
+     * @param angle The angle to draw the line from. 0 is horizontal and facing right. 90 is pointed directly down.
+     * @param dist The distance to draw the line.
+     * @return Returns the end point of the line drawn from the origin point and angle.
+     */
     public static Point calcPoint(Point point, float angle, float dist){
         if(point == null) {
             return new Point(0, 0);
@@ -30,6 +41,12 @@ public class QuadShapeDrawer {
         return new Point(x1, y1);
     }
 
+    /**
+     * Calcualte the distance between two points as an int.
+     * @param p1 The starting point.
+     * @param p2 The ending point.
+     * @return The distance between the two points as an int. It drops anything after the decimal.
+     */
     public static int calcDist(Point p1, Point p2) {
         if (p1 == null) {
             p1 = new Point(0, 0);
@@ -44,8 +61,8 @@ public class QuadShapeDrawer {
     }
 
     /**
-     * Once all points are drown, you get the point array which this method returns.
-     * @return The completed point array.
+     * Once all points are drawn, you can get the point array of the 4 corner points of the shape to draw to the screen.
+     * @return An array of the corner points of the shape.
      */
     public Point[] getPoints() {
         if (!completed) {
@@ -60,6 +77,11 @@ public class QuadShapeDrawer {
         return temp;
     }
 
+    /**
+     * Gets the point at the location provided.
+     * @param loc - The location of the point.
+     * @return The point at that location.
+     */
     public Point getPoint(PointLocation loc) {
         return this.points[loc.getPointToNum()];
     }

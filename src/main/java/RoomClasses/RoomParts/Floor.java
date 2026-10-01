@@ -7,13 +7,31 @@ import Helper.Point;
 
 import java.awt.*;
 
+/**
+ * The floor of a room. Does not have much functionality.
+ */
 public class Floor extends RoomComponent {
+    /**
+     * Constructs the floor with the image path provided.
+     * @param imagePath The path to the image to use.
+     */
     public Floor(String imagePath) {
         super(imagePath);
     }
+
+    /**
+     * Constructs the floor with the image path provided.
+     * @param imagePath The path to the image to use.
+     * @param warped Set if you want the image to be warped or not.
+     */
     public Floor(String imagePath, boolean warped) {
         super(imagePath, warped);
     }
+
+    /**
+     * Construct the floor with the color provided.
+     * @param color The color to use to draw the floor.
+     */
     public Floor(Color color) {
         super(color);
     }

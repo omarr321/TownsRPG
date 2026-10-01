@@ -8,13 +8,31 @@ import Helper.Point;
 
 import java.awt.*;
 
+/**
+ * The Ceiling of a room. Does not have much functionality.
+ */
 public class Ceiling extends RoomComponent {
+    /**
+     * Constructs the ceiling with the image path provided.
+     * @param imagePath The path to the image to use.
+     */
     public Ceiling(String imagePath) {
         super(imagePath);
     }
+
+    /**
+     * Constructs the ceiling with the image path provided.
+     * @param imagePath The path to the image to use.
+     * @param warped Set if you want the image to be warped or not.
+     */
     public Ceiling(String imagePath, boolean warped) {
         super(imagePath, warped);
     }
+
+    /**
+     * Construct the ceiling with the color provided.
+     * @param color The color to use to draw the ceiling.
+     */
     public Ceiling(Color color) {
         super(color);
     }
