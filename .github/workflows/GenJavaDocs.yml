@@ -8,9 +8,14 @@ jobs:
   publish-docs:
     runs-on: ubuntu-latest
 
-    # Required permissions to push the documentation back to the repository
     permissions:
-      contents: write
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout repository
@@ -26,10 +31,11 @@ jobs:
       - name: Generate Javadocs via Maven
         run: mvn javadoc:javadoc
 
-      - name: Deploy to GitHub Pages 🚀
-        uses: MathieuSoysal/Javadoc-publisher.yml@v3.0.2
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          javadoc-branch: javadoc
-          target-folder: docs
-          project: maven
+          path: target/reports/apidocs
+
+      - name: Deploy to GitHub Pages 🚀
+        id: deployment
+        uses: actions/deploy-pages@v4
