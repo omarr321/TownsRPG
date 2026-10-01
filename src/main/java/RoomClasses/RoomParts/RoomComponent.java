@@ -1,4 +1,4 @@
-package RoomClasses.roomParts;
+package RoomClasses.RoomParts;
 
 import RoomClasses.RoomObjects.RoomObj;
 

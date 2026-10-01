@@ -4,7 +4,7 @@ import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.Lighting.LightBlocker;
 import GUI.Lighting.LightPoint;
 import Helper.Point;
-import RoomClasses.roomParts.RoomComponent;
+import RoomClasses.RoomParts.RoomComponent;
 
 import java.awt.*;
 import java.util.HashMap;

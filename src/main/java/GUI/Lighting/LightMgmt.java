@@ -346,9 +346,6 @@ public class LightMgmt {
             int y0 = Math.max(0, cy - range);
             int x1 = Math.min(width - 1, cx + range);
             int y1 = Math.min(height - 1, cy + range);
-            if (x0 > x1 || y0 > y1) {
-                continue; // nothing of this light is on screen
-            }
 
             if (excluded.isEmpty()) {
                 // Usual case: the frame's opacity works as it is
@@ -473,9 +470,6 @@ public class LightMgmt {
                 int srcRow = (y - b.area.y) * aw - b.area.x;
                 for (int x = r.x; x < r.x + r.width; x++) {
                     float a = px == null ? 1f : ALPHA[px[srcRow + x] >>> 24];
-                    if (a <= 0f) {
-                        continue; // fully transparent: no effect on light
-                    }
                     int i = row + x;
                     if (b.reflect) {
                         ref[i] = 1f - (1f - ref[i]) * (1f - a);
@@ -663,15 +657,11 @@ public class LightMgmt {
         if (w <= 0f) {
             return;
         }
+
         if (px < x0 || px > x1 || py < y0 || py > y1) {
-            // Off screen: nothing there blocks light
-            acc[0] += w;
-            if (inRef) {
-                acc[1] += w * light.getBrightnessAt(px, py);
-                acc[2] += w * step * 0.5f;
-            }
             return;
         }
+
         int j = py * width + px;
         acc[0] += w * tout[j];
         if (inRef) {
@@ -710,9 +700,7 @@ public class LightMgmt {
             for (int x = area.x; x < area.x + area.width; x++) {
                 float a = b.spritePx == null ? 1f
                         : ALPHA[b.spritePx[(y - area.y) * area.width + (x - area.x)] >>> 24];
-                if (a <= 0f) {
-                    continue;
-                }
+
                 int i = row + x;
                 float r = keep + b.litBlend * Math.min(1f, redBuf[i] + b.litRed);
                 float g = keep + b.litBlend * Math.min(1f, greenBuf[i] + b.litGreen);

@@ -66,7 +66,7 @@ public class RectPanel extends JPanel {
         Graphics2D customGraphic = (Graphics2D) g;
 
         if (usesImage) {
-            ImageLoader image = new ImageLoader(this.imagePath);
+            ImageLoader image = createImageLoader(this.imagePath);
             Image currImage = image.getImage();
             if (image.isLoaded()) {
                 customGraphic.drawImage(currImage, 0, 0, width, height, this);
@@ -93,5 +93,9 @@ public class RectPanel extends JPanel {
             return;
         }
         drawBorder(item, xCoord+1, yCoord+1, width-2, height-2, color, temp);
+    }
+
+    ImageLoader createImageLoader(String path) {
+        return new ImageLoader(path);
     }
 }

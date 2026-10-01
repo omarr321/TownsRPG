@@ -104,7 +104,7 @@ public class QuadrilateralPanel extends JPanel {
         Polygon quadShape = new Polygon(localX, localY, 4);
 
         if (this.usesImage && this.imageWarp) {
-            ImageLoader image = new ImageLoader(this.imagePath);
+            ImageLoader image = createImageLoader(this.imagePath);
             Image currImage = image.getImage();
 
             Rectangle visible = getVisibleRect();
@@ -123,7 +123,7 @@ public class QuadrilateralPanel extends JPanel {
                 }
             }
         } else if (this.usesImage) {
-            ImageLoader image = new ImageLoader(this.imagePath);
+            ImageLoader image = createImageLoader(this.imagePath);
             Image currImage = image.getImage();
 
             if(image.isLoaded()){
@@ -305,6 +305,10 @@ public class QuadrilateralPanel extends JPanel {
 
     public Point getPoint(PointLocation p) {
         return this.points[p.getPointToNum()];
+    }
+
+    ImageLoader createImageLoader(String path) {
+        return new ImageLoader(path);
     }
 
     public enum PointLocation {

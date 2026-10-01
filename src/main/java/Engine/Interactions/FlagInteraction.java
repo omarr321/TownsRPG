@@ -24,7 +24,7 @@ public class FlagInteraction extends Interactable {
     public void setCheckFlag(String flagName) {
         this.checkFlag = flagName;
         if (!this.flags.flagExists(this.checkFlag)) {
-            System.out.println("Flag " + this.checkFlag + " does not exist, creating flag and setting it to false.");
+            //System.out.println("Flag " + this.checkFlag + " does not exist, creating flag and setting it to false.");
             this.flags.addFlag(this.checkFlag, false);
         }
     }

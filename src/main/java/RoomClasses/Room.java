@@ -8,12 +8,12 @@ import GUI.Lighting.LightPoint;
 import Helper.GameSettings;
 import RoomClasses.RoomObjects.InteractableObj;
 import RoomClasses.RoomObjects.RoomObj;
-import RoomClasses.roomParts.RoomComponent;
-import RoomClasses.roomParts.RoomComponent.RoomPart;
-import RoomClasses.roomParts.RoomPoints;
-import RoomClasses.roomParts.Wall;
-import RoomClasses.roomParts.Floor;
-import RoomClasses.roomParts.Ceiling;
+import RoomClasses.RoomParts.RoomComponent;
+import RoomClasses.RoomParts.RoomComponent.RoomPart;
+import RoomClasses.RoomParts.RoomPoints;
+import RoomClasses.RoomParts.Wall;
+import RoomClasses.RoomParts.Floor;
+import RoomClasses.RoomParts.Ceiling;
 
 import javax.swing.*;
 import java.awt.*;
@@ -194,10 +194,6 @@ public class Room{
         for (LightPoint lp : lightPoints) {
             lm.addLight(lp);
         }
-    }
-
-    private LightBlocker[] convertLightBlockers(RoomComponent roomComponent) {
-        return roomComponent.convertLightBlockers();
     }
 
     private QuadrilateralPanel convertRoomComponent(RoomComponent roomComp) {

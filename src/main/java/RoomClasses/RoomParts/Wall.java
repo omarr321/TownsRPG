@@ -1,4 +1,4 @@
-package RoomClasses.roomParts;
+package RoomClasses.RoomParts;
 
 import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.Lighting.LightBlocker;

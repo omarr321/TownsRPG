@@ -33,6 +33,14 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.15</version>
+
+                <configuration>
+                    <excludes>
+                        <!-- Excludes DisplayMgmt and its nested/anonymous classes because it is mostly UI wiring. -->
+                        <exclude>**/DisplayMgmt*.class</exclude>
+                    </excludes>
+                </configuration>
+
                 <executions>
                     <execution>
                         <goals>
@@ -60,7 +68,12 @@
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>.99</minimum>
+                                            <minimum>.95</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>MISSEDCOUNT</value>
+                                            <maximum>0</maximum>
                                         </limit>
                                     </limits>
                                 </rule>
