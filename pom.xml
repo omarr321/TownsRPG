@@ -4,7 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.townsrpg</groupId>
-    <artifactId>Towns RPG Engine</artifactId>
+    <artifactId>townsrpg</artifactId>
+    <name>Towns RPG Engine</name>
     <version>Alpha</version>
 
     <properties>
