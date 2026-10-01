@@ -1,0 +1,36 @@
+name: JaCoCo Coverage
+
+on:
+  workflow_run:
+    workflows: ["JUnit Tests"]   # must match the name: above exactly
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read          # needed to download the artifact from the other run
+  pull-requests: write   # needed to post the PR comment
+
+jobs:
+  coverage:
+    # Only after a passing JUnit run, and only for PRs (there is nothing to comment on for a push)
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: jacoco-report
+          path: jacoco
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: madrapps/jacoco-report@v1.8.0
+        with:
+          paths: ${{ github.workspace }}/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 100
+          min-coverage-changed-lines: 100
+          coverage-counter-type: LINE
+          show-missing-lines: true
+          continue-on-error: false

@@ -67,11 +67,6 @@
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>.95</minimum>
-                                        </limit>
-                                        <limit>
-                                            <counter>LINE</counter>
                                             <value>MISSEDCOUNT</value>
                                             <maximum>0</maximum>
                                         </limit>
