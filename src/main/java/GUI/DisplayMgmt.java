@@ -34,6 +34,9 @@ import java.util.Objects;
  * to start the program.
  */
 public class DisplayMgmt {
+    /** Not meant to be instantiated. */
+    private DisplayMgmt() { }
+
     private static final FontWrapper tuffyBold = new FontWrapper("/fonts/Tuffy_Bold.ttf", "Tuffy Bold");
     private static final FontWrapper tuffyPlain = new FontWrapper("/fonts/Tuffy.ttf","Tuffy Plain");
     /**

@@ -158,7 +158,7 @@ public class LightBlocker extends JPanel {
 
     /**
      * Sets the reflection distance for this blocker.
-     * @param reflectDist The reflection distance value (values <= 0 are normalized to -1).
+     * @param reflectDist The reflection distance value (values {@code <= 0} are normalized to -1).
      */
     public void setReflectDist(int reflectDist) {
         this.reflectDist = reflectDist > 0 ? reflectDist : -1;
@@ -174,7 +174,7 @@ public class LightBlocker extends JPanel {
 
     /**
      * Sets the lit blend factor for this blocker.
-     * @param litBlend The lit blend value (clamped between 0.0 and 1.0; values < 0 normalize to -1f).
+     * @param litBlend The lit blend value (clamped between 0.0 and 1.0; values {@code < 0} normalize to -1f).
      */
     public void setLitBlend(float litBlend) {
         this.litBlend = litBlend < 0f ? -1f : Math.min(1f, litBlend);
@@ -352,7 +352,7 @@ public class LightBlocker extends JPanel {
         BLOCK,
         /** Stops all light like BLOCK, but the lit edges glow outward with some of the light that hit them. */
         REFLECT,
-        /** Staps all light like BLOCK, but the whole obj glows the average of all lights hitting it.*/
+        /** Stops all light like BLOCK, but the whole object glows the average of all lights hitting it. */
         LIT
     }
 
