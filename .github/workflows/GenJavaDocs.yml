@@ -36,6 +36,7 @@ jobs:
           mkdir -p _site/javadoc
           cp -r target/reports/apidocs/* _site/javadoc/
           cp -r site/* _site/
+          cp -r src/main/resources/branding _site/branding
           cp README.md _site/README.md
           ls -R _site | head -40
 
