@@ -18,12 +18,10 @@ jobs:
           java-version: "25"
           cache: maven
 
-      - run: mvn -B clean verify
+      - run: mvn -B clean test
 
-      # Hand the coverage report to the JaCoCo workflow
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - name: Upload JaCoCo XML Report
+        uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
           path: target/site/jacoco/jacoco.xml
-          if-no-files-found: ignore

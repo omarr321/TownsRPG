@@ -19,4 +19,4 @@ jobs:
           distribution: 'temurin'
 
       - name: Run Checkstyle via Maven
-        run: mvn validate
+        run: mvn checkstyle:check
