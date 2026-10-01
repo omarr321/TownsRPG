@@ -31,11 +31,17 @@ jobs:
       - name: Generate Javadocs via Maven
         run: mvn javadoc:javadoc
 
+      - name: Assemble site
+        run: |
+            mkdir -p _site/javadoc
+            cp -r target/reports/apidocs/* _site/javadoc/
+            cp -r site/* _site/
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: target/reports/apidocs
 
-      - name: Deploy to GitHub Pages 🚀
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
