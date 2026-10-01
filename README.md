@@ -1,2 +1,2 @@
 # TownsRPG
-This will be a RPG type engine. We will see how it goes!
+A very basic 2D engine.
