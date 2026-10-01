@@ -1,0 +1,36 @@
+name: Checking JaCoCo Coverage
+
+on:
+  workflow_run:
+    workflows: ["Checking JUnit Tests"]   # must match the name: above exactly
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read          # needed to download the artifact from the other run
+  pull-requests: write   # needed to post the PR comment
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Run Tests & Generate Coverage
+        run: mvn -B clean test-compile jacoco:prepare-agent test jacoco:report
+
+      - uses: madrapps/jacoco-report@v1.8.0
+        with:
+          paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 100
+          min-coverage-changed-lines: 100
+          coverage-counter-type: LINE
+          show-missing-lines: true
+          continue-on-error: false

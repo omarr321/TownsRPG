@@ -5,6 +5,9 @@ import Helper.ImageLoader;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * A basic rectangular panel to draw to the screen.
+ */
 public class RectPanel extends JPanel {
     private int xCoord;
     private int yCoord;
@@ -18,6 +21,14 @@ public class RectPanel extends JPanel {
     private boolean usesImage = false;
     private static final String DEFAULT_IMAGE = "/images/DebugImage.png";
 
+    /**
+     * Constructs the rectangular panel using the values provided.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param fillColor The color to fill the shape.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, Color fillColor) {
         this.xCoord = xCoord;
         this.yCoord = yCoord;
@@ -31,16 +42,43 @@ public class RectPanel extends JPanel {
         this.setOpaque(false);
     }
 
+    /**
+     * Constructs the rectangular panel using the values provided. The border will be drawn with a thickness of 1.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param fillColor The color to fill the shape.
+     * @param borderColor The color of the border.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, Color fillColor, Color borderColor) {
         this(xCoord, yCoord, width, height, fillColor, borderColor, 1);
     }
 
+    /**
+     * Constructs the rectangular panel using the values provided, including border color and custom thickness.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param fillColor The color to fill the shape.
+     * @param borderColor The color of the border.
+     * @param thickness The thickness of the border.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, Color fillColor, Color borderColor, int thickness) {
         this(xCoord, yCoord, width, height, fillColor);
         this.borderColor = borderColor;
         this.thickness = thickness;
     }
 
+    /**
+     * Constructs the rectangular panel using an image loaded from the specified path.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param imagePath The path to the image to display.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, String imagePath) {
         this.xCoord = xCoord;
         this.yCoord = yCoord;
@@ -53,6 +91,16 @@ public class RectPanel extends JPanel {
         this.setOpaque(false);
     }
 
+    /**
+     * Constructs the rectangular panel using an image loaded from the specified path, along with a border color and thickness.
+     * @param xCoord The x of the top left of the panel.
+     * @param yCoord The y of the top left of the panel.
+     * @param width The width of the shape.
+     * @param height The height of the shape.
+     * @param imagePath The path to the image to display.
+     * @param borderColor The color of the border.
+     * @param thickness The thickness of the border.
+     */
     public RectPanel(int xCoord, int yCoord, int width, int height, String imagePath, Color borderColor, int thickness) {
         this(xCoord, yCoord, width, height, imagePath);
         this.borderColor = borderColor;
@@ -66,7 +114,7 @@ public class RectPanel extends JPanel {
         Graphics2D customGraphic = (Graphics2D) g;
 
         if (usesImage) {
-            ImageLoader image = new ImageLoader(this.imagePath);
+            ImageLoader image = createImageLoader(this.imagePath);
             Image currImage = image.getImage();
             if (image.isLoaded()) {
                 customGraphic.drawImage(currImage, 0, 0, width, height, this);
@@ -93,5 +141,9 @@ public class RectPanel extends JPanel {
             return;
         }
         drawBorder(item, xCoord+1, yCoord+1, width-2, height-2, color, temp);
+    }
+
+    ImageLoader createImageLoader(String path) {
+        return new ImageLoader(path);
     }
 }

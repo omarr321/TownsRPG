@@ -4,34 +4,76 @@ import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * This is a wrapper for loading font from the disk.
+ */
 public class FontWrapper {
-    String filePath = "";
-    Font customFont = null;
+    private String filePath;
+    private String fontName;
+    private final static Font DEFAULT_FONT = new Font(Font.SANS_SERIF,Font.PLAIN,16);
+    private Font customFont;
 
+    /**
+     * Construct the FontWrapper with file path and font name provied.
+     * @param filePath The path to the font file. Normally this is a .ttf.
+     * @param fontName The name of the font, this is only used for error messages.
+     */
     public FontWrapper(String filePath, String fontName) {
         this.filePath = filePath;
-        //System.out.println("Resource URL: " + getClass().getResource(filePath));
-        try (InputStream is = getClass().getResourceAsStream(filePath)) {
-            if (is == null) {
-                System.err.println(fontName + " Font not found! Defaulting to Sans Serif.");
-                // Fallback font
-                customFont = new Font(Font.SANS_SERIF,Font.PLAIN,16);
-            } else {
-                Font baseFont = Font.createFont(Font.TRUETYPE_FONT, is);
-                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                ge.registerFont(baseFont);
-                customFont = baseFont;
+        this.fontName = fontName;
+
+        if(this.filePath != null) {
+            try (InputStream is = openStream(filePath)) {
+                if (is == null) {
+                    System.err.println(fontName + " Font not found! Defaulting to Sans Serif.");
+                    // Fallback font
+                    customFont = FontWrapper.DEFAULT_FONT;
+                } else {
+                    Font baseFont = Font.createFont(Font.TRUETYPE_FONT, is);
+                    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                    ge.registerFont(baseFont);
+                    customFont = baseFont;
+                }
+            } catch (IOException e) {
+                this.handleError(fontName, "Font failed to load!");
+            } catch (FontFormatException e) {
+                this.handleError(fontName, "Font may be corrupted!");
             }
-        } catch (IOException e) {
-            System.err.println(fontName + " Font failed to load! Defaulting to Sans Serif.");
-            customFont = new Font(Font.SANS_SERIF,Font.PLAIN,16);
-        } catch (FontFormatException e) {
-            System.err.println(fontName + " Font may be corrupted! Defaulting to Sans Serif.");
-            customFont = new Font(Font.SANS_SERIF,Font.PLAIN,16);
+        } else {
+            this.customFont = FontWrapper.DEFAULT_FONT;
         }
     }
 
+    /**
+     * Returns a ready to use font of the size provided.
+     * @param size The size of the font.
+     * @return The font of the size provided.
+     */
     public Font getFont( int size){
         return customFont.deriveFont(Font.PLAIN, size);
+    }
+
+    private void handleError(String name, String message) {
+        System.err.println(name + " " + message + " Defaulting to Sans Serif.");
+        this.customFont = DEFAULT_FONT;
+    }
+
+    //For unit testing only
+    String getFilePath() {
+        return this.filePath;
+    }
+    String getFontName() {
+        return this.fontName;
+    }
+
+    /**
+     * Returns the default font for when a font fails to load.
+     * @return The default font.
+     */
+    public static Font getDefaultFont() {
+        return FontWrapper.DEFAULT_FONT;
+    }
+    InputStream openStream(String path) {
+        return getClass().getResourceAsStream(path);
     }
 }

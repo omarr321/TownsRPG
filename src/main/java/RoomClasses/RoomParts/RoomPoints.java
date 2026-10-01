@@ -1,10 +1,13 @@
-package RoomClasses.roomParts;
+package RoomClasses.RoomParts;
 
 import Helper.GameSettings;
 import Helper.Point;
 import Helper.QuadShapeDrawer;
-import RoomClasses.roomParts.RoomComponent.RoomPart;
+import RoomClasses.RoomParts.RoomComponent.RoomPart;
 
+/**
+ * Takes in multiple values and converts all those values to points on the screen to make drawing a room easier.
+ */
 public class RoomPoints {
     private double WALL_RATIO;
     private double SC_PERCENT;
@@ -18,7 +21,7 @@ public class RoomPoints {
     private int backStartingPointy;
 
     /**
-     * A constructor for the RoomPoint Class.
+     * A constructor for the RoomPoint Class. Sets the values to use.
      * @param WALL_RATIO The ratio if the width in relation to the height.
      * @param SC_PERCENT A number between .01 and 1 inclusive. Indicates the percent of width the back wall will take up.
      * @param SC_ANGLE A number between 1 and 89 inclusive. Indicates the angle at which to draw the walls, 0 is horizontal.
@@ -65,9 +68,6 @@ public class RoomPoints {
         this.calcPoints();
     }
 
-    /**
-     * Calcs the roomPoints using the values provided.
-     */
     private void calcPoints() {
         this.backWidth = Math.toIntExact(Math.round(GameSettings.screenWidth * this.SC_PERCENT));
         this.backHeight = Math.toIntExact(Math.round(this.backWidth * this.WALL_RATIO));
@@ -84,6 +84,11 @@ public class RoomPoints {
         this.roomPoints[7] = QuadShapeDrawer.calcPoint(this.roomPoints[3], 180 - this.SC_ANGLE, this.backWidth * this.OFFSCREEN_MULI);
     }
 
+    /**
+     * Returns an array of 4 Points that is the 4 points to draw the shape provided.
+     * @param roomPart The part you want to get the points for.
+     * @return An array of the points to draw the shape to the screen.
+     */
     public Point[] getPartPoints(RoomPart roomPart) {
         int[] pointLoc = roomPart.getPartPoints();
         return new Point[]{this.roomPoints[pointLoc[0]], this.roomPoints[pointLoc[1]], this.roomPoints[pointLoc[2]], this.roomPoints[pointLoc[3]]};

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<module name="Checker">
+    <!-- error severity is what makes the build fail -->
+    <property name="severity" value="error"/>
+
+    <!-- Ignore all checks for DisplayMgmt.java located in the GUI folder -->
+    <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[/\\]GUI[/\\]DisplayMgmt\.java$"/>
+    </module>
+
+    <module name="TreeWalker">
+        <!-- public methods and constructors -->
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="public"/>
+        </module>
+    </module>
+</module>

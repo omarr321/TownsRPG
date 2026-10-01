@@ -12,14 +12,13 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 /**
- * Holds every light in a scene plus the scene's ambient light,
- * and works out what color things should be once lit.
+ * Manages all light sources and ambient illumination in a scene, and calculates
+ * the resulting lighting effects and pixel colors across an image.
  * <p>
- * Blockers affect light pixel by pixel, using the alpha of what they follow: fully transparent pixels let
- * all light through, fully opaque pixels stop it, and semi-transparent pixels let part of it through
- * (alpha 0.25 stops a quarter). Light is worked out outward from each light, one ring of pixels at a time,
- * so each pixel knows how much light made it past everything between it and the light.
- * </p>
+ * Blockers affect light pixel by pixel using the alpha of what they follow: fully transparent pixels
+ * let all light through, fully opaque pixels block it, and semi-transparent pixels let a fraction through.
+ * Lighting is propagated outward from each light source ring by ring, ensuring every pixel accurately
+ * receives light obstructed or altered by anything between it and the light source.
  */
 public class LightMgmt {
     private final List<LightPoint> lights = new ArrayList<>();
@@ -77,27 +76,37 @@ public class LightMgmt {
     // slots 0-3 are the four quarters around the light, slot 4 is the light's own row and column.
     private static final int SLOTS = 5;
 
+    /**
+     * Constructs a LightMgmt instance with the specified ambient color and intensity.
+     * @param ambientColor The base Color of the ambient light.
+     * @param ambientIntensity The intensity level of the ambient light (0.0 to 1.0).
+     */
     public LightMgmt(Color ambientColor, float ambientIntensity) {
         setAmbient(ambientColor, ambientIntensity);
     }
 
-    /** Dim white ambient light. */
+    /**
+     * Constructs a LightMgmt instance with default dim white ambient light.
+     */
     public LightMgmt() {
         this(Color.WHITE, 0.1f);
     }
 
     /**
-     * Makes a light manager whose light is blocked by the blockers in a light layer.
-     * @param lightLayer The layer of blockers.
-     * @param ambientColor The ambient light color.
-     * @param ambientIntensity The ambient light strength, 0 to 1.
+     * Constructs a LightMgmt instance with a specified light layer and ambient lighting configuration.
+     * @param lightLayer The {@link LightLayer} containing blockers for this scene.
+     * @param ambientColor The base Color of the ambient light.
+     * @param ambientIntensity The intensity level of the ambient light (0.0 to 1.0).
      */
     public LightMgmt(LightLayer lightLayer, Color ambientColor, float ambientIntensity) {
         this(ambientColor, ambientIntensity);
         this.lightLayer = lightLayer;
     }
 
-    /** Dim white ambient light, with light blocked by the blockers in a light layer. */
+    /**
+     * Constructs a LightMgmt instance with a specified light layer and default dim white ambient light.
+     * @param lightLayer The {@link LightLayer} containing blockers for this scene.
+     */
     public LightMgmt(LightLayer lightLayer) {
         this(lightLayer, Color.WHITE, 0.1f);
     }
@@ -106,6 +115,11 @@ public class LightMgmt {
     // ---------------------------------------------------------------
     // Ambient light
     // ---------------------------------------------------------------
+    /**
+     * Sets the ambient color and intensity for the scene, caching normalized values for performance.
+     * @param color The ambient light Color.
+     * @param intensity The ambient light strength (0.0 to 1.0).
+     */
     public void setAmbient(Color color, float intensity) {
         this.ambientColor = color;
         this.ambientIntensity = intensity;
@@ -114,18 +128,34 @@ public class LightMgmt {
         this.ambientBlue = color.getBlue() / 255f * intensity;
     }
 
+    /**
+     * Sets the ambient light color while keeping the current intensity.
+     * @param color The new ambient Color.
+     */
     public void setAmbientColor(Color color) {
         setAmbient(color, ambientIntensity);
     }
 
+    /**
+     * Sets the ambient light intensity while keeping the current color.
+     * @param intensity The new intensity level (0.0 to 1.0).
+     */
     public void setAmbientIntensity(float intensity) {
         setAmbient(ambientColor, intensity);
     }
 
+    /**
+     * Gets the current ambient light color.
+     * @return The ambient Color.
+     */
     public Color getAmbientColor() {
         return ambientColor;
     }
 
+    /**
+     * Gets the current ambient light intensity level.
+     * @return The intensity float value.
+     */
     public float getAmbientIntensity() {
         return ambientIntensity;
     }
@@ -133,18 +163,33 @@ public class LightMgmt {
     // ---------------------------------------------------------------
     // Lights
     // ---------------------------------------------------------------
+    /**
+     * Adds a light point to the manager.
+     * @param light The {@link LightPoint} to add.
+     */
     public void addLight(LightPoint light) {
         lights.add(light);
     }
 
+    /**
+     * Removes a light point from the manager.
+     * @param light The {@link LightPoint} to remove.
+     */
     public void removeLight(LightPoint light) {
         lights.remove(light);
     }
 
+    /**
+     * Clears all registered lights from the manager.
+     */
     public void clearLights() {
         lights.clear();
     }
 
+    /**
+     * Gets the list of all light points currently managed.
+     * @return A List of {@link LightPoint} instances.
+     */
     public List<LightPoint> getLights() {
         return lights;
     }
@@ -152,34 +197,59 @@ public class LightMgmt {
     // ---------------------------------------------------------------
     // Light blocking
     // ---------------------------------------------------------------
+    /**
+     * Sets the light layer containing blockers for this scene.
+     * @param lightLayer The {@link LightLayer} to associate.
+     */
     public void setLightLayer(LightLayer lightLayer) {
         this.lightLayer = lightLayer;
     }
 
+    /**
+     * Gets the associated light layer containing blockers.
+     * @return The active {@link LightLayer}, or null.
+     */
     public LightLayer getLightLayer() {
         return lightLayer;
     }
 
     /**
-     * Default distance, in pixels, that light tapers into a REFLECT blocker (used when the blocker has no reflectDist).
+     * Sets the default distance, in pixels, that light tapers into a REFLECT blocker
+     * that does not have its own specified reflection distance.
+     * @param reflectSpread The spread distance in pixels.
      */
     public void setReflectSpread(int reflectSpread) {
         this.reflectSpread = Math.max(1, reflectSpread);
     }
 
+    /**
+     * Gets the default reflect spread distance.
+     * @return The distance in pixels.
+     */
     public int getReflectSpread() {
         return reflectSpread;
     }
 
+    /**
+     * Sets the blending factor for LIT blockers (clamped between 0.0 and 1.0).
+     * @param litBlend The new blend factor.
+     */
     public void setLitBlend(float litBlend) {
         this.litBlend = Math.max(0f, Math.min(1f, litBlend));
     }
 
+    /**
+     * Gets the blending factor for LIT blockers.
+     * @return The blend float value.
+     */
     public float getLitBlend() {
         return litBlend;
     }
 
-    /** One active blocker for this frame: where it is, its alpha, and what it does to light. */
+    /**
+     * Represents an active light blocker evaluated for the current frame, storing its position,
+     * alpha mask data, light interaction tag, and face illumination metrics.
+     */
     private static final class ActiveBlocker {
         final int index;
         final Rectangle bounds;
@@ -259,6 +329,13 @@ public class LightMgmt {
     // Single point: give it a point and a color, get the lit color back
     // (does not account for blockers)
     // ---------------------------------------------------------------
+    /**
+     * Calculates the resulting lit Color for a specific point given a base color,
+     * factoring in ambient light and all registered lights (excluding blockers).
+     * @param point The {@link Point} coordinate to evaluate.
+     * @param baseColor The base unlit Color.
+     * @return The resulting illuminated Color.
+     */
     public Color getLitColor(Point point, Color baseColor) {
         int x = point.getX();
         int y = point.getY();
@@ -294,6 +371,10 @@ public class LightMgmt {
     // ---------------------------------------------------------------
     // Whole image: lights every pixel of an image at once (used by LightingLayerUI)
     // ---------------------------------------------------------------
+    /**
+     * Applies dynamic lighting, shadows, and reflections to an entire image in a single pass.
+     * @param image The target BufferedImage to illuminate.
+     */
     public void applyTo(BufferedImage image) {
         int type = image.getType();
         if (type != BufferedImage.TYPE_INT_RGB && type != BufferedImage.TYPE_INT_ARGB) {
@@ -346,9 +427,6 @@ public class LightMgmt {
             int y0 = Math.max(0, cy - range);
             int x1 = Math.min(width - 1, cx + range);
             int y1 = Math.min(height - 1, cy + range);
-            if (x0 > x1 || y0 > y1) {
-                continue; // nothing of this light is on screen
-            }
 
             if (excluded.isEmpty()) {
                 // Usual case: the frame's opacity works as it is
@@ -416,6 +494,10 @@ public class LightMgmt {
         });
     }
 
+    /**
+     * Ensures internal working buffers match the required buffer size, reallocating them if necessary.
+     * @param size The required buffer size in pixels.
+     */
     private void ensureBuffers(int size) {
         if (redBuf != null && redBuf.length == size) {
             return;
@@ -473,9 +555,6 @@ public class LightMgmt {
                 int srcRow = (y - b.area.y) * aw - b.area.x;
                 for (int x = r.x; x < r.x + r.width; x++) {
                     float a = px == null ? 1f : ALPHA[px[srcRow + x] >>> 24];
-                    if (a <= 0f) {
-                        continue; // fully transparent: no effect on light
-                    }
                     int i = row + x;
                     if (b.reflect) {
                         ref[i] = 1f - (1f - ref[i]) * (1f - a);
@@ -663,15 +742,11 @@ public class LightMgmt {
         if (w <= 0f) {
             return;
         }
+
         if (px < x0 || px > x1 || py < y0 || py > y1) {
-            // Off screen: nothing there blocks light
-            acc[0] += w;
-            if (inRef) {
-                acc[1] += w * light.getBrightnessAt(px, py);
-                acc[2] += w * step * 0.5f;
-            }
             return;
         }
+
         int j = py * width + px;
         acc[0] += w * tout[j];
         if (inRef) {
@@ -710,9 +785,7 @@ public class LightMgmt {
             for (int x = area.x; x < area.x + area.width; x++) {
                 float a = b.spritePx == null ? 1f
                         : ALPHA[b.spritePx[(y - area.y) * area.width + (x - area.x)] >>> 24];
-                if (a <= 0f) {
-                    continue;
-                }
+
                 int i = row + x;
                 float r = keep + b.litBlend * Math.min(1f, redBuf[i] + b.litRed);
                 float g = keep + b.litBlend * Math.min(1f, greenBuf[i] + b.litGreen);

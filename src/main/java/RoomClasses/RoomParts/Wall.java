@@ -1,4 +1,4 @@
-package RoomClasses.roomParts;
+package RoomClasses.RoomParts;
 
 import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.Lighting.LightBlocker;
@@ -12,15 +12,38 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents a physical wall within a room.
+ * <p>
+ * The {@code Wall} class extends {@code RoomComponent} and acts as a container for
+ * various room objects ({@code RoomObj}), light blockers, and light points. It supports
+ * rendering via solid colors or images (with optional warping) and provides functionality
+ * to convert its contents into screen-ready quadrilateral panels and lighting components.
+ */
 public class Wall extends RoomComponent {
     private final Map<String, RoomObj> roomObjs = new HashMap<>();
 
+    /**
+     * Constructs a Wall using the specified background image path.
+     * @param imagePath The path to the image for this wall.
+     */
     public Wall(String imagePath) {
         super(imagePath);
     }
+
+    /**
+     * Constructs a Wall using the specified background image path and warp configuration.
+     * @param imagePath The path to the image for this wall.
+     * @param warped Whether the image should be warped.
+     */
     public Wall(String imagePath, boolean warped) {
         super(imagePath, warped);
     }
+
+    /**
+     * Constructs a Wall using a solid fill color.
+     * @param color The color of this wall.
+     */
     public Wall(Color color) {
         super(color);
     }
@@ -123,19 +146,37 @@ public class Wall extends RoomComponent {
         return this.lightPoints.get(name);
     }
 
+    /**
+     * Adds a room object to this wall's collection.
+     * @param key The unique key identifier for the room object.
+     * @param roomObj The RoomObj instance to add.
+     */
     public void addRoomObj(String key, RoomObj roomObj) {
         //System.out.println("Adding " + key + " with value " + roomObj);
         this.roomObjs.put(key, roomObj);
     }
 
+    /**
+     * Retrieves a room object by its key.
+     * @param key The key identifier of the room object.
+     * @return The RoomObj instance, or null if not found.
+     */
     public RoomObj getRoomObj(String key) {
         return this.roomObjs.get(key);
     }
 
+    /**
+     * Returns a list of all room objects stored on this wall.
+     * @return A List containing all RoomObj instances.
+     */
     public List<RoomObj> getRoomObjs() {
         return new ArrayList<>(this.roomObjs.values());
     }
 
+    /**
+     * Generates and returns an array of QuadrilateralPanels for rendering the room objects on screen.
+     * @return An array of QuadrilateralPanel objects representing the room objects.
+     */
     public QuadrilateralPanel[] putToScreen() {
         ArrayList<QuadrilateralPanel> qPanel = new ArrayList<>();
         this.roomObjs.forEach((key, value) -> {

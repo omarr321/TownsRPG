@@ -16,6 +16,17 @@ public class LightPoint {
     private float green;
     private float blue;
 
+    /**
+     * Constructs a LightPoint with the specified location, shape, reach distance,
+     * dead zone configuration, intensity, and color.
+     * @param loc The 2D coordinate location of the light source.
+     * @param shape The geometric shape of the light (e.g., CIRCLE or SQUARE).
+     * @param dist The maximum reach distance of the light.
+     * @param deadZone The radius/size of the inner dead zone where light is not emitted.
+     * @param deadZoneFade The pixel distance over which the dead zone edge softens.
+     * @param intensity The solid-intensity ratio of the light spread.
+     * @param lightColor The base Color of the light.
+     */
     public LightPoint(Point loc, LightShape shape, int dist, int deadZone, int deadZoneFade, float intensity, Color lightColor) {
         this.loc = loc;
         this.shape = shape;
@@ -32,19 +43,37 @@ public class LightPoint {
         this.blue = lightColor.getBlue() /255f;
     }
 
+    /**
+     * Gets the normalized red component of the light color (0.0 to 1.0).
+     * @return The red float value.
+     */
     public float getRed() {
         return this.red;
     }
 
+    /**
+     * Gets the normalized green component of the light color (0.0 to 1.0).
+     * @return The green float value.
+     */
     public float getGreen() {
         return this.green;
     }
 
+    /**
+     * Gets the normalized blue component of the light color (0.0 to 1.0).
+     * @return The blue float value.
+     */
     public float getBlue() {
         return this.blue;
     }
 
-
+    /**
+     * Calculates the brightness level of this light at a given 2D screen coordinate,
+     * factoring in shape boundaries, dead zones, distance falloff, and smooth edge blending.
+     * @param pointX The x coordinate to check.
+     * @param pointY The y coordinate to check.
+     * @return A float representing the brightness value (from 0.0 to 1.0).
+     */
     public float getBrightnessAt(int pointX, int pointY) {
         int xDist = pointX - this.loc.getX();
         int yDist = pointY - this.loc.getY();
@@ -78,13 +107,22 @@ public class LightPoint {
         return brightness;
     }
 
+    /**
+     * Gets the location point of this light source.
+     * @return The Point representing the light's location.
+     */
     public Point getLoc(){
         return this.loc;
     }
 
+    /**
+     * Gets the maximum reach distance of this light source.
+     * @return The distance in scaled pixels.
+     */
     public int getDist() {
         return this.dist;
     }
+
     private float fade(float t) {
         if (t <= intensity) {
             return 1f; // solid part
@@ -94,7 +132,9 @@ public class LightPoint {
         return falloff * falloff;
     }
 
-
+    /**
+     * Defines the geometric spread shape options for light sources.
+     */
     public enum LightShape {
         CIRCLE,
         SQUARE

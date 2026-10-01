@@ -8,18 +8,23 @@ import GUI.Lighting.LightPoint;
 import Helper.GameSettings;
 import RoomClasses.RoomObjects.InteractableObj;
 import RoomClasses.RoomObjects.RoomObj;
-import RoomClasses.roomParts.RoomComponent;
-import RoomClasses.roomParts.RoomComponent.RoomPart;
-import RoomClasses.roomParts.RoomPoints;
-import RoomClasses.roomParts.Wall;
-import RoomClasses.roomParts.Floor;
-import RoomClasses.roomParts.Ceiling;
+import RoomClasses.RoomParts.RoomComponent;
+import RoomClasses.RoomParts.RoomComponent.RoomPart;
+import RoomClasses.RoomParts.RoomPoints;
+import RoomClasses.RoomParts.Wall;
+import RoomClasses.RoomParts.Floor;
+import RoomClasses.RoomParts.Ceiling;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a 3D-styled room consisting of four walls, a floor, a ceiling,
+ * and associated room geometry points. Manages view navigation (looking left/right),
+ * screen rendering, and lighting layers.
+ */
 public class Room{
     Wall[] walls = new Wall[4];
     int lookingWall = 0;
@@ -29,9 +34,10 @@ public class Room{
     RoomPoints roomPoints;
 
     /**
-     * Constructor that takes in the floor and ceiling and sets them.
+     * Constructs a Room with the specified floor, ceiling, and room coordinate points.
      * @param floor The floor of the room.
      * @param ceiling The ceiling of the room.
+     * @param roomPoints The coordinate points defining the structure of the room parts.
      */
     public Room(Floor floor, Ceiling ceiling, RoomPoints roomPoints){
         this.floor = floor;
@@ -41,13 +47,12 @@ public class Room{
     }
 
     /**
-     * Adds walls to the room
+     * Adds a wall to the room at the specified index.
      * <p>
-     * Adds walls to the walls array via index. If the index falls outside 0-3, this method will not do anything and returns false. Otherwise, it will set the wall.
-     * <p/>
+     * If the index falls outside the range 0-3, this method does not do anything.
      *
-     * @param wall  The wall to add.
-     * @param index What index to add it at.
+     * @param wall The wall to add.
+     * @param index The index (0-3) to add the wall at.
      */
     public void setWall(Wall wall, int index){
         if (index < 0 || index > walls.length - 1){
@@ -56,19 +61,38 @@ public class Room{
         walls[index] = wall;
     }
 
+    /**
+     * Gets the wall the player is currently looking at.
+     * @return The active looking Wall.
+     */
     public Wall getLookingWall() {
         return this.walls[lookingWall];
     }
+
+    /**
+     * Gets the wall to the left of the current looking wall.
+     * @return The left Wall.
+     */
     public Wall getLeftWall() {
         int temp = this.lookingWall-1;
         if (temp < 0){temp = 3;}
         return this.walls[temp];
     }
+
+    /**
+     * Gets the wall to the right of the current looking wall.
+     * @return The right Wall.
+     */
     public Wall getRightWall() {
         int temp = this.lookingWall+1;
         if (temp > 3){temp = 0;}
         return this.walls[temp];
     }
+
+    /**
+     * Gets the fourth wall (opposite) relative to the current looking wall.
+     * @return The fourth Wall.
+     */
     public Wall getFourthWall() {
         int temp = this.lookingWall-1;
         if (temp < 0){temp = 3;}
@@ -78,11 +102,8 @@ public class Room{
     }
 
     /**
-     * Gets the visible walls of a room
-     * <p>
-     * This method returns the visible walls of a room in an array in the following format: [Left Wall, Center Wall, Right Wall].
-     * <p/>
-     * @return An array of the visible walls.
+     * Gets the visible walls of the room in the format: [Left Wall, Center/Looking Wall, Right Wall].
+     * @return An array of the visible Wall components.
      */
     public Wall[]  getVisibleWalls() {
         Wall[] temp = new Wall[3];
@@ -93,12 +114,13 @@ public class Room{
     }
 
     /**
-     * Sets the looking index.
+     * Sets the looking wall index directly.
      * <p>
-     * Sets the looking index directly. If the index falls outside 0-3, this method will not do anything and returns false. Otherwise, it will set the looking wall.
-     * <p/>
-     * @param index The index you want to set the looking wall to.
-     * @return True if the index was set, false if otherwise.
+     * If the index falls outside 0-3, this method does nothing and returns false.
+     * Otherwise, it updates the looking wall index and room parts.
+     *
+     * @param index The index (0-3) you want to set the looking wall to.
+     * @return True if the index was successfully set, false otherwise.
      */
     public boolean setLookingIndex(int index){
         if (index < 0 || index > walls.length - 1){
@@ -124,7 +146,7 @@ public class Room{
     }
 
     /**
-     * This method changes the room looking wall towards the right.
+     * Rotates the player's view to the right, updating the active looking wall.
      */
     public void lookRight() {
         this.lookingWall++;
@@ -135,7 +157,7 @@ public class Room{
     }
 
     /**
-     * This method changes the room looking wall towards the left.
+     * Rotates the player's view to the left, updating the active looking wall.
      */
     public void lookLeft() {
         this.lookingWall--;
@@ -145,6 +167,10 @@ public class Room{
         updateRoomPart();
     }
 
+    /**
+     * Renders the room and its contents into a displayable JPanel.
+     * @return A JPanel configured with all room components and interactive objects.
+     */
     public JPanel putToScreen() {
         JPanel panel = new JPanel();
         panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
@@ -169,6 +195,10 @@ public class Room{
         return panel;
     }
 
+    /**
+     * Updates the lighting layer with light blockers from the floor, ceiling, and visible/looking walls.
+     * @param ll The LightLayer to update.
+     */
     public void updateLightLayer(LightLayer ll) {
         if (!this.completed) {
             System.err.println("Can not update " + this + " lights as it is an imcomplete room!");
@@ -189,15 +219,15 @@ public class Room{
         }
     }
 
+    /**
+     * Updates lighting management with light points located on the current looking wall.
+     * @param lm The LightMgmt instance to update.
+     */
     public void updateLightMgmt(LightMgmt lm) {
         LightPoint[] lightPoints = this.getLookingWall().convertLightPoints();
         for (LightPoint lp : lightPoints) {
             lm.addLight(lp);
         }
-    }
-
-    private LightBlocker[] convertLightBlockers(RoomComponent roomComponent) {
-        return roomComponent.convertLightBlockers();
     }
 
     private QuadrilateralPanel convertRoomComponent(RoomComponent roomComp) {
@@ -211,6 +241,10 @@ public class Room{
         return temp;
     }
 
+    /**
+     * Retrieves a list of all interactable objects present on the current looking wall.
+     * @return A List of InteractableObj instances.
+     */
     public List<InteractableObj> getInteractable() {
         List<InteractableObj> result = new ArrayList<>();
         Wall wall = this.getLookingWall();

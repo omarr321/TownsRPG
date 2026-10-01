@@ -12,7 +12,7 @@ import Engine.Interactions.FlagInteraction;
 import RoomClasses.Room;
 import RoomClasses.RoomObjects.BasicObj;
 import RoomClasses.RoomObjects.InteractableObj;
-import RoomClasses.roomParts.*;
+import RoomClasses.RoomParts.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

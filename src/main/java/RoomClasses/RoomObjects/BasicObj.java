@@ -8,22 +8,49 @@ import Helper.Point;
 import java.awt.*;
 import java.util.ArrayList;
 
+/**
+ * Represents a basic concrete room object extending {@code RoomObj},
+ * providing standard management for shape corners, rendering attributes,
+ * and lighting elements.
+ */
 public class BasicObj extends RoomObj{
     private Point[] shapeCorners;
 
+    /**
+     * Constructs a BasicObj with specified shape corners and a solid fill color.
+     * @param shapeCorners An array of Point objects representing the corners of the object's shape.
+     * @param color The solid color to fill the object.
+     */
     public BasicObj(Point[] shapeCorners, Color color) {
         super(shapeCorners, color);
         this.shapeCorners = shapeCorners;
     }
+
+    /**
+     * Constructs a BasicObj with specified shape corners and an image path.
+     * @param shapeCorners An array of Point objects representing the corners of the object's shape.
+     * @param imagePath The path to the image to render on the object.
+     */
     public BasicObj(Point[] shapeCorners, String imagePath) {
         super(shapeCorners, imagePath);
         this.shapeCorners = shapeCorners;
     }
+
+    /**
+     * Constructs a BasicObj with specified shape corners, an image path, and warp configuration.
+     * @param shapeCorners An array of Point objects representing the corners of the object's shape.
+     * @param imagePath The path to the image to render on the object.
+     * @param warped Whether the image should be warped.
+     */
     public BasicObj(Point[] shapeCorners, String imagePath, boolean warped) {
         super(shapeCorners, imagePath, warped);
         this.shapeCorners = shapeCorners;
     }
 
+    /**
+     * Gets the draw type of this basic object.
+     * @return The DrawType of the object.
+     */
     public DrawType getType() {
         return this.type;
     }
@@ -110,10 +137,18 @@ public class BasicObj extends RoomObj{
         return new QuadrilateralPanel[0];
     }
 
+    /**
+     * Gets the corner points defining the geometric shape of this basic object.
+     * @return An array of Point objects representing the shape corners.
+     */
     public Point[] getShapeCorners() {
         return shapeCorners;
     }
 
+    /**
+     * Sets the corner points defining the geometric shape of this basic object.
+     * @param shapeCorners An array of Point objects representing the new shape corners.
+     */
     public void setShapeCorners(Point[] shapeCorners) {
         this.shapeCorners = shapeCorners;
     }

@@ -1,5 +1,8 @@
 package Helper;
 
+/**
+ * Static setting of the game that is shared accross the engine.
+ */
 public class GameSettings {
     public static boolean fullScreen = false;
     public static int screenWidth = 0;
@@ -35,16 +38,21 @@ public class GameSettings {
         return Math.max(1, Math.round(value * getScale()));
     }
 
+    /**
+     * Converts a size in real screen pixels to reference-screen pixels.
+     * Values of 0 or less are returned unchanged, and positive values never scale below 1.
+     */
     public static int descale(int value) {
         if (value <= 0) {
             return value;
         }
         float scale = getScale();
-        //Checks for 0 so we don't divide by zero
-        if (scale <= 0) {
-            return value;
-        }
         return Math.max(1, Math.round(value / scale));
     }
 
+    //For Unit Testing
+    // Private constructor to hide the implicit public one and prevent instantiation
+    private GameSettings() {
+        throw new UnsupportedOperationException("GameSettings.java Can not be instantiation.");
+    }
 }

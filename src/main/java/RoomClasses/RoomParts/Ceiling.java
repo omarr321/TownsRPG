@@ -1,4 +1,5 @@
-package RoomClasses.roomParts;
+package RoomClasses.RoomParts;
+
 
 import GUI.CustomPanels.QuadrilateralPanel;
 import GUI.Lighting.LightBlocker;
@@ -7,14 +8,32 @@ import Helper.Point;
 
 import java.awt.*;
 
-public class Floor extends RoomComponent {
-    public Floor(String imagePath) {
+/**
+ * The Ceiling of a room. Does not have much functionality.
+ */
+public class Ceiling extends RoomComponent {
+    /**
+     * Constructs the ceiling with the image path provided.
+     * @param imagePath The path to the image to use.
+     */
+    public Ceiling(String imagePath) {
         super(imagePath);
     }
-    public Floor(String imagePath, boolean warped) {
+
+    /**
+     * Constructs the ceiling with the image path provided.
+     * @param imagePath The path to the image to use.
+     * @param warped Set if you want the image to be warped or not.
+     */
+    public Ceiling(String imagePath, boolean warped) {
         super(imagePath, warped);
     }
-    public Floor(Color color) {
+
+    /**
+     * Construct the ceiling with the color provided.
+     * @param color The color to use to draw the ceiling.
+     */
+    public Ceiling(Color color) {
         super(color);
     }
 
@@ -60,47 +79,48 @@ public class Floor extends RoomComponent {
 
     @Override
     public LightBlocker[] convertLightBlockers() {
-        System.err.println("The floor can not contain light blockers!");
+        System.err.println("The ceiling can not contain light blockers!");
         return new LightBlocker[0];
     }
 
     @Override
     public void addLightBlocker(String name, LightBlocker lightBlocker) {
-        System.err.println("The floor can not contain light blockers!");
+        System.err.println("The ceiling can not contain lights blockers!");
     }
 
     @Override
     public boolean removeLightBlocker(String name) {
-        System.err.println("The floor can not contain light blockers!");
+        System.err.println("The ceiling can not contain lights blockers!");
         return false;
     }
 
     @Override
     public LightBlocker getLightBlocker(String name) {
-        System.err.println("The floor can not contain light blockers!");
+        System.err.println("The ceiling can not contain lights blockers!");
         return null;
     }
 
+
     @Override
     public LightPoint[] convertLightPoints() {
-        System.err.println("The floor can not contain lights!");
+        System.err.println("The ceiling can not contain lights!");
         return new LightPoint[0];
     }
 
     @Override
     public void addLightPoint(String name, LightPoint lightPoint) {
-        System.err.println("The floor can not contain lights!");
+        System.err.println("The ceiling can not contain lights!");
     }
 
     @Override
     public boolean removeLightPoint(String name) {
-        System.err.println("The floor can not contain lights!");
+        System.err.println("The ceiling can not contain lights!");
         return false;
     }
 
     @Override
     public LightPoint getLightPoint(String name) {
-        System.err.println("The floor can not contain lights!");
+        System.err.println("The ceiling can not contain lights!");
         return null;
     }
 
