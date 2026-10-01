@@ -2,17 +2,34 @@ package Engine.Interactions;
 
 import Engine.FlagHolder;
 
+/**
+ * Basic Flag Interaction that when you interact with the obj, sets a flag to true.
+ */
 public class FlagInteraction extends Interactable {
     private final FlagHolder flags;
     private String checkFlag;
 
     private String replaceMessage = "";
 
+    /**
+     * Creates a new flag interaction.
+     * @param message The message that gets printed when this interaction is triggered.
+     * @param flags The player flags so it can update the flags.
+     * @param checkFlag The flag that will be set to true when the interaction is triggered.
+     */
     public FlagInteraction(String message, FlagHolder flags, String checkFlag) {
         super(message);
         this.flags = flags;
         setCheckFlag(checkFlag);
     }
+
+    /**
+     * Creates a new flag interaction.
+     * @param message The message that gets printed when this interaction is triggered.
+     * @param replaceMessage The replacement message that replaces the message after first trigger.
+     * @param flags The player flags so it can update the flags.
+     * @param checkFlag The flag that will be set to true when the interaction is triggered.
+     */
     public FlagInteraction(String message, String replaceMessage, FlagHolder flags, String checkFlag) {
         super(message);
         this.flags = flags;
@@ -20,7 +37,10 @@ public class FlagInteraction extends Interactable {
         setCheckFlag(checkFlag);
     }
 
-
+    /**
+     * Changes what flag will be checked when this flag interaction is triggered.
+     * @param flagName The new flag to replace the old flag.
+     */
     public void setCheckFlag(String flagName) {
         this.checkFlag = flagName;
         if (!this.flags.flagExists(this.checkFlag)) {
