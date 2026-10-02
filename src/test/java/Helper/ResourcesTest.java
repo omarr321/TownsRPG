@@ -33,7 +33,10 @@ public class ResourcesTest {
     @ValueSource(strings = {
             "/images/UI/arrow_left.png",
             "/images/UI/arrow_right.png",
-            "/images/UI/arrow_straight.png"
+            "/images/UI/arrow_straight.png",
+            "/images/UI/arrow_left_x.png",
+            "/images/UI/arrow_right_x.png",
+            "/images/UI/arrow_straight_x.png"
     })
     void requiredUIExists(String path) {
         assertNotNull(getClass().getResource(path), "Missing UI: " + path);
