@@ -21,6 +21,26 @@ public class ResourcesTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
+            "/branding/colors.txt",
+            "/branding/icon.svg",
+            "/branding/logo.svg"
+    })
+    void requiredBrandingExists(String path) {
+        assertNotNull(getClass().getResource(path), "Missing branding: " + path);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/images/UI/arrow_left.png",
+            "/images/UI/arrow_right.png",
+            "/images/UI/arrow_straight.png"
+    })
+    void requiredUIExists(String path) {
+        assertNotNull(getClass().getResource(path), "Missing UI: " + path);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
             "/fonts/Tuffy.ttf",
             "/fonts/Tuffy_Bold.ttf",
             "/fonts/untyped.ttf"
