@@ -1,6 +1,7 @@
 package GUI;
 
 import Engine.Player;
+import GUI.Hud.HudUI;
 import GUI.Lighting.*;
 import Helper.Point;
 import Helper.QuadShapeDrawer;
@@ -686,7 +687,7 @@ public class DisplayMgmt {
         }
 
         private JPanel createBasicRoom(boolean showBlockers, boolean showLights, boolean showInteractable) {
-            JPanel litPanel = new JPanel(new BorderLayout());
+            JPanel hudPanel = new JPanel(new BorderLayout());
 
             //1 - Creates the debug room.
             Room room = createBasicRoom();
@@ -707,9 +708,13 @@ public class DisplayMgmt {
             lightingUI.setShowInteractable(showInteractable);
             lightingUI.setInteractables(room::getInteractable);
 
-            //5 - Creating the graphics for the room and applying the lightUI to it.
+            //5 - Creating the Hud UI
+            HudUI hudUI = new HudUI(room);
+
+            //6 - Creating the graphics for the room and applying the lightUI to it and then the HudUI to it.
             JPanel roomPanel = room.putToScreen();
             JLayer<JComponent> litLayer = new JLayer<>(roomPanel, lightingUI);
+            JLayer<JComponent> hudLayer = new JLayer<>(litLayer, hudUI);
 
 
 
@@ -792,8 +797,8 @@ public class DisplayMgmt {
                 }
             });
 
-            litPanel.add(litLayer, BorderLayout.CENTER);
-            return litPanel;
+            hudPanel.add(hudLayer, BorderLayout.CENTER);
+            return hudPanel;
         }
 
         private JPanel createDebugLightRoomTest(boolean showBlockers, boolean showLights, boolean showInteractable) {

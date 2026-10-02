@@ -6,6 +6,7 @@ import GUI.Lighting.LightLayer;
 import GUI.Lighting.LightMgmt;
 import GUI.Lighting.LightPoint;
 import Helper.GameSettings;
+import Helper.QuadShapeDrawer;
 import RoomClasses.RoomObjects.InteractableObj;
 import RoomClasses.RoomObjects.RoomObj;
 import RoomClasses.RoomParts.RoomComponent;
@@ -14,6 +15,7 @@ import RoomClasses.RoomParts.RoomPoints;
 import RoomClasses.RoomParts.Wall;
 import RoomClasses.RoomParts.Floor;
 import RoomClasses.RoomParts.Ceiling;
+import Helper.Point;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,9 +30,9 @@ import java.util.List;
 public class Room{
     Wall[] walls = new Wall[4];
     int lookingWall = 0;
-    Floor floor = null;
-    Ceiling ceiling = null;
-    boolean completed = false;
+    Floor floor;
+    Ceiling ceiling;
+    boolean completed;
     RoomPoints roomPoints;
 
     /**
@@ -177,7 +179,7 @@ public class Room{
         panel.setLayout(null);
 
         if (!this.completed) {
-            System.err.println("Can not put " + this + " to screen as it is an imcomplete room!");
+            System.err.println("Can not put " + this + " to screen as it is an incomplete room!");
             return panel;
         }
 
@@ -201,7 +203,7 @@ public class Room{
      */
     public void updateLightLayer(LightLayer ll) {
         if (!this.completed) {
-            System.err.println("Can not update " + this + " lights as it is an imcomplete room!");
+            System.err.println("Can not update " + this + " lights as it is an incomplete room!");
             return;
         }
 
@@ -256,5 +258,20 @@ public class Room{
             }
         }
         return result;
+    }
+
+    public Point[] getMessageBoxPoints(float scale) {
+        Point[] backwallPoints = this.roomPoints.getPartPoints(this.getLookingWall().getRoomPart());
+
+        int height = (int)(GameSettings.screenHeight * scale);
+        int length = QuadShapeDrawer.calcDist(backwallPoints[0], backwallPoints[1]);
+
+        Point screenTop = new Point(backwallPoints[0].getX(), GameSettings.screenHeight - height);
+        QuadShapeDrawer messageBox = new QuadShapeDrawer(screenTop);
+        messageBox.drawLine(0, length);
+        messageBox.drawLine(90, height);
+        messageBox.drawLine(180, length);
+
+        return messageBox.getPoints();
     }
 }
