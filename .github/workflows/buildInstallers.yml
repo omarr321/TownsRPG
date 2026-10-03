@@ -3,6 +3,7 @@ name: Build Native Installers
 on:
   push:
     branches: [main]
+    tags: ['v*']
   workflow_dispatch:
 
 concurrency:
@@ -11,27 +12,22 @@ concurrency:
 
 jobs:
   build-installer:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            type: deb
-            ext: deb
-          - os: ubuntu-latest
-            type: rpm
-            ext: rpm
-          - os: windows-latest
-            type: msi
-            ext: msi
-          - os: windows-latest
-            type: exe
-            ext: exe
-          - os: macos-latest
-            type: dmg
-            ext: dmg
-
-    runs-on: ${{ matrix.os }}
+          # ---- Windows ----
+          - { label: windows-msi, os: windows-latest, type: msi,       ext: msi }
+          - { label: windows-exe, os: windows-latest, type: exe,       ext: exe }
+          # ---- macOS (arm64 = Apple Silicon, intel = x86_64) ----
+          - { label: macos-arm64, os: macos-latest,      type: dmg,    ext: dmg }
+          - { label: macos-intel, os: macos-15-intel,    type: dmg,    ext: dmg }
+          # ---- Linux ----
+          - { label: linux-portable, os: ubuntu-latest, type: app-image, ext: tar.gz }
+          - { label: linux-deb,      os: ubuntu-latest, type: deb,       ext: deb }
+          - { label: linux-rpm,      os: ubuntu-latest, type: rpm,       ext: rpm }
 
     steps:
       - name: Checkout repository
@@ -44,28 +40,58 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Install Linux Packaging Dependencies
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
+      - name: Install Linux packaging dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm binutils
 
-      - name: Build Native Package (Windows)
-        if: startsWith(matrix.os, 'windows')
-        shell: cmd
-        run: mvn clean package -Djpackage.type=${{ matrix.type }}
+      - name: Make sure WiX is available (Windows msi/exe)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset -y --no-progress
+            "C:\Program Files (x86)\WiX Toolset v3.14\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          }
 
-      - name: Build Native Package (Unix/Mac)\
-        if: matrix.os != 'windows-latest'
-        run: mvn clean package -Djpackage.type=${{ matrix.type }}
+      # Tests already run in junit.yml; skipping them here keeps GUI tests from
+      # breaking the installer build on headless runners.
+      - name: Build native package
+        shell: bash
+        run: mvn -B clean package -DskipTests -Djacoco.skip=true -Djpackage.type=${{ matrix.type }}
 
-      - name: Prepare Release Artifact
+      - name: Prepare release artifact
         shell: bash
         run: |
           mkdir -p release-bundle
-          find target/installer -name "*.${{ matrix.ext }}" -exec cp {} release-bundle/ \;
-          ls -R release-bundle
+          if [ "${{ matrix.type }}" = "app-image" ]; then
+            tar -czf "release-bundle/TownsRPG-linux-x64.tar.gz" -C target/installer TownsRPG
+          else
+            for f in target/installer/*.${{ matrix.ext }}; do
+              base="$(basename "$f" ".${{ matrix.ext }}")"
+              cp "$f" "release-bundle/${base}-${{ matrix.label }}.${{ matrix.ext }}"
+            done
+          fi
+          ls -lR release-bundle
 
-      - name: Upload Native Installer Artifact
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: native-installer-${{ matrix.type }}-${{ github.run_attempt }}
-          path: release-bundle/
+          name: installer-${{ matrix.label }}
+          path: release-bundle/*
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-installer
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

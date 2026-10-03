@@ -6,13 +6,17 @@
     <groupId>com.townsrpg</groupId>
     <artifactId>townsrpg</artifactId>
     <name>Towns RPG Engine</name>
-    <version>1.0.0-Pre-release</version>
+    <version>${revision}${changelist}</version>
 
     <properties>
+        <!-- ONE place to change the release version. Must be numeric (e.g. 1.0.0) for jpackage. -->
+        <revision>1.0.0</revision>
+        <!-- Suffix for the jar/Maven version only. Set to empty for a final release: <changelist></changelist> -->
+        <changelist>-Pre-release</changelist>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jpackage.type>deb</jpackage.type>
-        <jpackage.version>1.0.0</jpackage.version>
+        <jpackage.type>app-image</jpackage.type>
+        <jpackage.version>${revision}</jpackage.version>
     </properties>
 
     <dependencies>
@@ -153,6 +157,32 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>stage-jpackage-input</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/jpackage-input</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>${project.artifactId}-${project.version}.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
@@ -171,7 +201,7 @@
                                 <argument>--name</argument>
                                 <argument>TownsRPG</argument>
                                 <argument>--input</argument>
-                                <argument>${project.build.directory}</argument>
+                                <argument>${project.build.directory}/jpackage-input</argument>
                                 <argument>--main-jar</argument>
                                 <argument>${project.artifactId}-${project.version}.jar</argument>
                                 <argument>--main-class</argument>
@@ -180,6 +210,8 @@
                                 <argument>${project.build.directory}/installer</argument>
                                 <argument>--app-version</argument>
                                 <argument>${jpackage.version}</argument>
+                                <argument>--add-modules</argument>
+                                <argument>java.desktop,java.logging</argument>
                             </arguments>
                         </configuration>
                     </execution>
