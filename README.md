@@ -80,7 +80,7 @@ The project enforces some strict standards, and CI runs them on every pull reque
 
 - **JUnit 5** unit tests for the engine, rendering, lighting, and helper classes.
 - **JaCoCo coverage gate.** No missed lines are allowed and instruction coverage must be at least 95%. `DisplayMgmt` is excluded because it is mostly UI wiring.
-- **Checkstyle** requires Javadoc on all public and protected classes, methods, and fields (see [`checkstyle.xml`](checkstyle.xml)).
+- **Checkstyle** requires Javadoc on all public and protected classes, methods, and fields (see [`checkstyle.xml`](https://github.com/omarr321/TownsRPG/blob/main/checkstyle.xml)).
 - **Javadoc build** must succeed.
 
 ## Documentation
