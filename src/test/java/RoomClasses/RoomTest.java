@@ -439,9 +439,9 @@ public class RoomTest {
 
     @Test
     void putToScreenWorksWithImageParts() {
-        Room room = new Room(new Floor("/images/WoodFloor.png"), new Ceiling("/images/WoodFloor.png"), new RoomPoints(0.5, 0.5, 30, 2));
+        Room room = new Room(new Floor("/images/floors/WoodFloor.png"), new Ceiling("/images/floors/WoodFloor.png"), new RoomPoints(0.5, 0.5, 30, 2));
         for (int i = 0; i < 4; i++) {
-            room.setWall(new Wall("/images/BrickWall.png"), i);
+            room.setWall(new Wall("/images/walls/BrickWall.png"), i);
         }
         room.setLookingIndex(1);
 

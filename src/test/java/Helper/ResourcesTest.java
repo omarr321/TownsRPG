@@ -7,15 +7,63 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ResourcesTest {
     @ParameterizedTest
     @ValueSource(strings = {
-            "/images/BrickWall.png",
-            "/images/Crate.png",
-            "/images/DebugImage.png",
-            "/images/LampTransparent.png",
-            "/images/LightTest.png",
-            "/images/UVGrid.png",
-            "/images/WoodFloor.png"
+            "/images/debugging/DebugImage.png",
+            "/images/debugging/LightTest.png",
+            "/images/debugging/UVGrid.png"
     })
-    void requiredImageExists(String path) {
+    void requiredDebugImageExists(String path) {
+        assertNotNull(getClass().getResource(path), "Missing image: " + path);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/images/Crate.png",
+            "/images/floors/WoodFloor.png"
+    })
+    void requiredObjImageExists(String path) {
+        assertNotNull(getClass().getResource(path), "Missing image: " + path);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/images/floors/CarpetFloor.png",
+            "/images/floors/CheckerFloor.png",
+            "/images/floors/ConcreteFloor.png",
+            "/images/floors/DarkWoodFloor.png",
+            "/images/floors/FlagstoneFloor.png",
+            "/images/floors/MarbleFloor.png",
+            "/images/floors/TerracottaFloor.png",
+            "/images/floors/WoodFloor.png",
+
+    })
+    void requiredFloorImageExists(String path) {
+        assertNotNull(getClass().getResource(path), "Missing image: " + path);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/images/walls/BrickWall.png",
+            "/images/walls/ConcreteWall.png",
+            "/images/walls/PlasterWall.png",
+            "/images/walls/StoneWall.png",
+            "/images/walls/StripedWallpaper.png",
+            "/images/walls/WainscotWall.png",
+            "/images/walls/WoodPanelWall.png",
+    })
+    void requiredWallImageExists(String path) {
+        assertNotNull(getClass().getResource(path), "Missing image: " + path);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/images/ceilings/BeamCeiling.png",
+            "/images/ceilings/CofferedCeiling.png",
+            "/images/ceilings/DropTileCeiling.png",
+            "/images/ceilings/InductrialCeiling.png",
+            "/images/ceilings/PlasterCeiling.png",
+            "/images/ceilings/WoodPlankCeiling.png",
+    })
+    void requiredCeilingImageExists(String path) {
         assertNotNull(getClass().getResource(path), "Missing image: " + path);
     }
 

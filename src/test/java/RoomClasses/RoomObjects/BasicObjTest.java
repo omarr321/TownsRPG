@@ -101,9 +101,9 @@ public class BasicObjTest {
     void setImagePathChangesPath() {
         BasicObj obj = new BasicObj(corners, "/images/Crate.png");
 
-        obj.setImagePath("/images/BrickWall.png");
+        obj.setImagePath("/images/walls/BrickWall.png");
 
-        assertEquals("/images/BrickWall.png", obj.getImagePath());
+        assertEquals("/images/walls/BrickWall.png", obj.getImagePath());
     }
 
     @Test

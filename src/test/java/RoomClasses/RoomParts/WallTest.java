@@ -57,10 +57,10 @@ public class WallTest {
 
     @Test
     void imageConstructor() {
-        Wall wall = new Wall("/images/BrickWall.png");
+        Wall wall = new Wall("/images/walls/BrickWall.png");
 
         assertEquals(RoomObj.DrawType.IMAGE, wall.getType());
-        assertEquals("/images/BrickWall.png", wall.getImagePath());
+        assertEquals("/images/walls/BrickWall.png", wall.getImagePath());
         assertNull(wall.getColor());
         assertTrue(wall.getWarped());
         assertNull(wall.getRoomPart());
@@ -68,7 +68,7 @@ public class WallTest {
 
     @Test
     void imageConstructorWithWarpFalse() {
-        Wall wall = new Wall("/images/BrickWall.png", false);
+        Wall wall = new Wall("/images/walls/BrickWall.png", false);
 
         assertEquals(RoomObj.DrawType.IMAGE, wall.getType());
         assertFalse(wall.getWarped());
@@ -102,7 +102,7 @@ public class WallTest {
 
     @Test
     void setImagePathChangesPath() {
-        Wall wall = new Wall("/images/BrickWall.png");
+        Wall wall = new Wall("/images/walls/BrickWall.png");
 
         wall.setImagePath("/images/Crate.png");
 

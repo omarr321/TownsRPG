@@ -106,9 +106,9 @@ public class CeilingTest {
     void setImagePathChangesPath() {
         Ceiling part = new Ceiling("/images/Crate.png");
 
-        part.setImagePath("/images/BrickWall.png");
+        part.setImagePath("/images/walls/BrickWall.png");
 
-        assertEquals("/images/BrickWall.png", part.getImagePath());
+        assertEquals("/images/walls/BrickWall.png", part.getImagePath());
     }
 
     @Test

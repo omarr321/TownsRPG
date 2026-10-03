@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ImageLoaderTest {
-    private static final String VALID = "/images/DebugImage.png";
+    private static final String VALID = "/images/debugging/DebugImage.png";
     private static final String MISSING = "/images/does_not_exist.png";
 
     @Test

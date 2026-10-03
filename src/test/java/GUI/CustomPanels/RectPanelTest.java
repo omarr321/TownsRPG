@@ -161,7 +161,7 @@ public class RectPanelTest {
 
     @Test
     void imagePanelPaintsSomething() {
-        BufferedImage image = render(new RectPanel(0, 0, 40, 40, "/images/BrickWall.png"));
+        BufferedImage image = render(new RectPanel(0, 0, 40, 40, "/images/walls/BrickWall.png"));
 
         assertTrue(hasVisiblePixel(image), "Expected the image to draw at least one visible pixel");
     }
@@ -177,7 +177,7 @@ public class RectPanelTest {
 
     @Test
     void imagePanelWithBorderDrawsBorderOnTop() {
-        BufferedImage image = render(new RectPanel(0, 0, 40, 40, "/images/BrickWall.png", Color.MAGENTA, 2));
+        BufferedImage image = render(new RectPanel(0, 0, 40, 40, "/images/walls/BrickWall.png", Color.MAGENTA, 2));
 
         assertEquals(rgb(Color.MAGENTA), image.getRGB(0, 0));
         assertEquals(rgb(Color.MAGENTA), image.getRGB(1, 20));
@@ -186,8 +186,8 @@ public class RectPanelTest {
 
     @Test
     void imageIsScaledToThePanelSize() {
-        RectPanel small = new RectPanel(0, 0, 10, 10, "/images/BrickWall.png");
-        RectPanel big = new RectPanel(0, 0, 80, 80, "/images/BrickWall.png");
+        RectPanel small = new RectPanel(0, 0, 10, 10, "/images/walls/BrickWall.png");
+        RectPanel big = new RectPanel(0, 0, 80, 80, "/images/walls/BrickWall.png");
 
         assertEquals(10, render(small).getWidth());
         assertEquals(80, render(big).getWidth());
