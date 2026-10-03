@@ -1,4 +1,4 @@
-name: Checking JaCoCo Coverage
+name: JaCoCo Coverage
 
 on:
   pull_request:
