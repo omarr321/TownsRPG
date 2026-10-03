@@ -13,8 +13,13 @@
   <img src="https://img.shields.io/badge/Current_Release-None-red" alt="None">
 </p>
 
-[![Generated JavaDocs](https://github.com/omarr321/TownsRPG/actions/workflows/buildjavadocs.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/buildjavadocs.yml)
-[![Build Native Installers](https://github.com/omarr321/TownsRPG/actions/workflows/buildInstaller.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/buildInstaller.yml)
+<div align="center">
+
+| **Workflow Statuses** |
+| :---: |
+| [![Generated JavaDocs](https://github.com/omarr321/TownsRPG/actions/workflows/buildjavadocs.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/buildjavadocs.yml) &nbsp;&nbsp; [![Build Native Installers](https://github.com/omarr321/TownsRPG/actions/workflows/buildInstaller.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/buildInstaller.yml) |
+
+</div>
 
 > [!NOTE]
 > This project is currently under active development. No stable releases are available yet, and APIs or features may change without notice. Use at your own risk.

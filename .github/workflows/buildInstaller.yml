@@ -1,0 +1,71 @@
+name: Build Native Installers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-or-installer
+  cancel-in-progress: false
+
+jobs:
+  build-installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            type: deb
+            ext: deb
+          - os: ubuntu-latest
+            type: rpm
+            ext: rpm
+          - os: windows-latest
+            type: msi
+            ext: msi
+          - os: windows-latest
+            type: exe
+            ext: exe
+          - os: macos-latest
+            type: dmg
+            ext: dmg
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Install Linux Packaging Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
+
+      - name: Build Native Package (Windows)
+        if: startsWith(matrix.os, 'windows')
+        shell: cmd
+        run: mvn clean package -Djpackage.type=${{ matrix.type }}
+
+      - name: Build Native Package (Unix/Mac)
+        if: !startsWith(matrix.os, 'windows')
+        run: mvn clean package -Djpackage.type=${{ matrix.type }}
+
+      - name: Prepare Release Artifact
+        shell: bash
+        run: |
+          mkdir -p release-bundle
+          find target/installer -name "*.${{ matrix.ext }}" -exec cp {} release-bundle/ \;
+          ls -R release-bundle
+
+      - name: Upload Native Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-installer-${{ matrix.type }}-${{ github.run_attempt }}
+          path: release-bundle/
