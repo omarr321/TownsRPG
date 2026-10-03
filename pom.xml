@@ -11,7 +11,8 @@
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jpackage.type>deb</jpackage.type> <!-- Default fallback -->
+        <jpackage.type>deb</jpackage.type>
+        <jpackage.version>0.1.0</jpackage.version>
     </properties>
 
     <dependencies>
@@ -178,7 +179,7 @@
                                 <argument>--dest</argument>
                                 <argument>${project.build.directory}/installer</argument>
                                 <argument>--app-version</argument>
-                                <argument>${project.version}</argument>
+                                <argument>${jpackage.version}</argument>
                             </arguments>
                         </configuration>
                     </execution>
