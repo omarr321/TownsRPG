@@ -1,0 +1,29 @@
+name: Enforce Source Branch
+
+# Fails any pull request into main that does not come from a version-* branch.
+# Make this check "required" in a branch ruleset (see instructions) so GitHub
+# blocks the merge button when it fails.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  check-source:
+    name: Only version-* branches can merge into main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [[ "$HEAD_REF" == version-* ]]; then
+            echo "OK: '$HEAD_REF' is allowed to merge into main."
+          else
+            echo "::error::PRs into main must come from a 'version-*' branch (this one is '$HEAD_REF')."
+            exit 1
+          fi

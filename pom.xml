@@ -6,13 +6,16 @@
     <groupId>com.townsrpg</groupId>
     <artifactId>townsrpg</artifactId>
     <name>Towns RPG Engine</name>
-    <version>1.0.0-Pre-release</version>
+    <version>${revision}</version>
 
     <properties>
+        <!-- ONE place to change the release version. Must be numeric (e.g. 1.0.0) for jpackage. -->
+        <revision>1.0.0</revision>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jpackage.type>deb</jpackage.type>
-        <jpackage.version>1.0.0</jpackage.version>
+        <jpackage.type>app-image</jpackage.type>
+        <jpackage.version>${revision}</jpackage.version>
+        <jpackage.icon>${project.basedir}/packaging/icons/icon.png</jpackage.icon>
     </properties>
 
     <dependencies>
@@ -32,6 +35,27 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <filesets>
+                        <!-- Stray file the shade plugin writes into the project root -->
+                        <fileset>
+                            <directory>${project.basedir}</directory>
+                            <includes>
+                                <include>dependency-reduced-pom.xml</include>
+                            </includes>
+                        </fileset>
+                        <!-- IntelliJ's own build output -->
+                        <fileset>
+                            <directory>${project.basedir}/out</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -153,6 +177,32 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>stage-jpackage-input</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/jpackage-input</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>${project.artifactId}-${project.version}.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
@@ -171,7 +221,7 @@
                                 <argument>--name</argument>
                                 <argument>TownsRPG</argument>
                                 <argument>--input</argument>
-                                <argument>${project.build.directory}</argument>
+                                <argument>${project.build.directory}/jpackage-input</argument>
                                 <argument>--main-jar</argument>
                                 <argument>${project.artifactId}-${project.version}.jar</argument>
                                 <argument>--main-class</argument>
@@ -180,6 +230,10 @@
                                 <argument>${project.build.directory}/installer</argument>
                                 <argument>--app-version</argument>
                                 <argument>${jpackage.version}</argument>
+                                <argument>--icon</argument>
+                                <argument>${jpackage.icon}</argument>
+                                <argument>--add-modules</argument>
+                                <argument>java.desktop,java.logging</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -187,4 +241,18 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- jpackage needs a different icon format per OS: .ico (Windows), .icns (macOS), .png (Linux) -->
+        <profile>
+            <id>icon-windows</id>
+            <activation><os><family>windows</family></os></activation>
+            <properties><jpackage.icon>${project.basedir}/packaging/icons/icon.ico</jpackage.icon></properties>
+        </profile>
+        <profile>
+            <id>icon-mac</id>
+            <activation><os><family>mac</family></os></activation>
+            <properties><jpackage.icon>${project.basedir}/packaging/icons/icon.icns</jpackage.icon></properties>
+        </profile>
+    </profiles>
 </project>
