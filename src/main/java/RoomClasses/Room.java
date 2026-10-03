@@ -315,4 +315,15 @@ public class Room{
 
         return messageBox.getPoints();
     }
+
+    //For testing
+    JPanel getScreenPanel() {
+        return this.screenPanel;
+    }
+    LightLayer getBoundLightLayer() {
+        return this.boundLightLayer;
+    }
+    LightMgmt getBoundLightMgmt() {
+        return this.boundLightMgmt;
+    }
 }
