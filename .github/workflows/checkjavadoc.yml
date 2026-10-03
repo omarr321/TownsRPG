@@ -1,4 +1,4 @@
-name: Checking Javadoc Build
+name: Javadoc Build
 
 on:
   pull_request:

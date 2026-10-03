@@ -6,13 +6,13 @@
     <groupId>com.townsrpg</groupId>
     <artifactId>townsrpg</artifactId>
     <name>Towns RPG Engine</name>
-    <version>0.1.0-Pre-alpha</version>
+    <version>1.0.0-Pre-release</version>
 
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jpackage.type>deb</jpackage.type>
-        <jpackage.version>0.1.0</jpackage.version>
+        <jpackage.version>1.0.0</jpackage.version>
     </properties>
 
     <dependencies>
