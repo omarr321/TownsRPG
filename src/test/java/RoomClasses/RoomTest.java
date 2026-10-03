@@ -296,6 +296,20 @@ public class RoomTest {
         assertNull(room.getFourthWall());
     }
 
+    @Test
+    void gettersReturnNullUntilTheRoomIsCompleted() {
+        Room room = emptyRoom();
+        for (int i = 0; i < 4; i++) {
+            room.setWall(walls[i], i);
+        }
+
+        assertNull(room.getLookingWall());
+        assertNull(room.getLeftWall());
+        assertNull(room.getRightWall());
+        assertNull(room.getFourthWall());
+        assertNull(room.getVisibleWalls());
+    }
+
     // ---- lookRight / lookLeft ----
 
     @Test
@@ -368,28 +382,42 @@ public class RoomTest {
     }
 
     @Test
-    void lookingCompletesARoomThatHasAllItsPieces() {
+    void settingLookingIndexCompletesARoomThatHasAllItsPieces() {
         Room room = emptyRoom();
         for (int i = 0; i < 4; i++) {
             room.setWall(walls[i], i);
         }
         assertFalse(room.completed);
 
-        room.lookRight();
+        assertTrue(room.setLookingIndex(1));
 
         assertTrue(room.completed);
+    }
+
+    @Test
+    void lookRightAndLeftDoNothingOnAnIncompleteRoom() {
+        Room room = emptyRoom();
+        for (int i = 0; i < 4; i++) {
+            room.setWall(walls[i], i);
+        }
+
+        room.lookRight();
+        room.lookLeft();
+
+        assertEquals(0, room.lookingWall);
+        assertFalse(room.completed);
+        assertFalse(err.toString().isEmpty());
     }
 
     // ---- putToScreen ----
 
     @Test
-    void putToScreenOfIncompleteRoomIsAnEmptyPanel() {
+    void putToScreenOfIncompleteRoomReturnsNull() {
         Room room = emptyRoom();
 
         JPanel panel = room.putToScreen();
 
-        assertNotNull(panel);
-        assertEquals(0, panel.getComponentCount());
+        assertNull(panel);
         assertFalse(err.toString().isEmpty());
     }
 
@@ -402,10 +430,12 @@ public class RoomTest {
     }
 
     @Test
-    void putToScreenOfIncompleteRoomStillHasScreenSize() {
-        JPanel panel = emptyRoom().putToScreen();
+    void putToScreenOfIncompleteRoomDoesNotCreateAScreenPanel() {
+        Room room = emptyRoom();
 
-        assertEquals(new Dimension(1920, 1080), panel.getPreferredSize());
+        room.putToScreen();
+
+        assertNull(room.getScreenPanel());
     }
 
     @Test
@@ -637,8 +667,34 @@ public class RoomTest {
     }
 
     @Test
+    void refreshLightingOnIncompleteRoomDoesNotTouchBoundLighting() {
+        Room room = emptyRoom();
+        LightLayer ll = new LightLayer(1920, 1080);
+        LightMgmt lm = new LightMgmt();
+
+        room.bindLighting(ll, lm);
+
+        assertSame(ll, room.getBoundLightLayer());
+        assertSame(lm, room.getBoundLightMgmt());
+        assertTrue(ll.getBlockers().isEmpty());
+        assertTrue(lm.getLights().isEmpty());
+    }
+
+    @Test
     void testMessageBoxPoints() {
         Room room = completeRoom();
         Point[] messageBoxPoints = room.getMessageBoxPoints(.33f);
+        Point[] expected = new Point[]{new Point(480, 724), new Point(1440, 724), new Point(1440, 1080), new Point(480, 1080)};
+        assertEquals(4, messageBoxPoints.length);
+        for (int i = 0; i < 4; i++) {
+            assertEquals(expected[i].getX(), messageBoxPoints[i].getX(), "x of point " + i);
+            assertEquals(expected[i].getY(), messageBoxPoints[i].getY(), "y of point " + i);
+        }
+    }
+
+    @Test
+    void messageBoxPointsOfIncompleteRoomIsNull() {
+        assertNull(emptyRoom().getMessageBoxPoints(.33f));
+        assertFalse(err.toString().isEmpty());
     }
 }
