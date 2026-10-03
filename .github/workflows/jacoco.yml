@@ -2,7 +2,7 @@ name: JaCoCo Coverage
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'version-**']
 
 permissions:
   contents: read

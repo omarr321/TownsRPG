@@ -2,7 +2,7 @@ name: JUnit Tests
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'version-**']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
