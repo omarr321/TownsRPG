@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   build-installer:
-    runs-on: ubuntu-latest # Change to windows-latest or macos-latest if targeting those OSes specifically
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
@@ -27,16 +27,14 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 1. Package your app and run jpackage (via Maven plugin or exec)
       - name: Build Native Package via Maven
-        run: mvn clean package # Make sure your pom.xml includes the jpackage execution
+        run: mvn clean package
 
-      # 2. Isolate ONLY the final installer, excluding source code and workflows
       - name: Prepare Release Artifact
         run: |
           mkdir -p release-bundle
-          # Copy only the built native installer from target/ (e.g., .deb, .rpm, .msi, etc.)
-          find target -name "*.deb" -o -name "*.rpm" -o -name "*.msi" -o -name "*.exe" -o -name "*.dmg" -exec cp {} release-bundle/ \;
+          # Copy the generated installer from the dedicated jpackage destination folder
+          cp target/installer/*.deb release-bundle/
           ls -R release-bundle
 
       - name: Upload Native Installer Artifact
