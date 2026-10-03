@@ -1,5 +1,6 @@
 package RoomClasses;
 
+import GUI.Hud.HudUI;
 import GUI.Lighting.LightBlocker;
 import GUI.Lighting.LightLayer;
 import GUI.Lighting.LightMgmt;
@@ -604,5 +605,40 @@ public class RoomTest {
         room.lookRight(); // now wall 2
 
         assertEquals(1, room.getInteractable().size());
+    }
+
+    @Test
+    void testScreenPanel() {
+        Room room = completeRoom();
+        assertNull(room.getScreenPanel());
+        room.rebuildScreen();
+        assertNull(room.getScreenPanel());
+        room.putToScreen();
+        assertNotNull(room.getScreenPanel());
+    }
+
+    @Test
+    void testBindLightingAndRefreshLighting() {
+        Room room = completeRoom();
+        assertNull(room.getBoundLightLayer());
+        assertNull(room.getBoundLightMgmt());
+        room.refreshLighting();
+        assertNull(room.getBoundLightLayer());
+        assertNull(room.getBoundLightMgmt());
+
+        LightMgmt lm = new LightMgmt();
+        LightLayer ll = new LightLayer();
+        room.bindLighting(ll, lm);
+        assertNotNull(room.getBoundLightLayer());
+        assertNotNull(room.getBoundLightMgmt());
+        room.refreshLighting();
+        assertNotNull(room.getBoundLightLayer());
+        assertNotNull(room.getBoundLightMgmt());
+    }
+
+    @Test
+    void testMessageBoxPoints() {
+        Room room = completeRoom();
+        Point[] messageBoxPoints = room.getMessageBoxPoints(.33f);
     }
 }
