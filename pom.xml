@@ -170,13 +170,13 @@
                                 <argument>--name</argument>
                                 <argument>TownsRPG</argument>
                                 <argument>--input</argument>
-                                <argument>target</argument>
+                                <argument>${project.build.directory}</argument>
                                 <argument>--main-jar</argument>
                                 <argument>${project.artifactId}-${project.version}.jar</argument>
                                 <argument>--main-class</argument>
                                 <argument>GUI.DisplayMgmt</argument>
                                 <argument>--dest</argument>
-                                <argument>target/installer</argument>
+                                <argument>${project.build.directory}/installer</argument>
                             </arguments>
                         </configuration>
                     </execution>
