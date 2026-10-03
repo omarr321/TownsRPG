@@ -1,4 +1,4 @@
-name: Build Native Installer
+name: Generating JavaDocs
 
 on:
   push:
@@ -10,11 +10,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-installer:
-    runs-on: ubuntu-latest # Change to windows-latest or macos-latest if targeting those OSes specifically
+  publish-docs:
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout repository
@@ -27,17 +33,26 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build Native Package via Maven
-        run: mvn clean package
+      - name: Generate Javadocs via Maven
+        run: mvn javadoc:javadoc
 
-      - name: Prepare Release Artifact
+      - name: Assemble site
         run: |
-          mkdir -p release-bundle
-          find target -name "*.deb" -o -name "*.rpm" -o -name "*.msi" -o -name "*.exe" -o -name "*.dmg" -exec cp {} release-bundle/ \;
-          ls -R release-bundle
+          mkdir -p _site/javadoc
+          cp -r target/reports/apidocs/* _site/javadoc/
+          cp -r site/* _site/
+          cp -r src/main/resources/branding _site/branding
+          cp README.md _site/README.md
+          ls -R _site | head -40
 
-      - name: Upload Native Installer Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: native-installer-${{ github.run_attempt }}
-          path: release-bundle/
+          path: _site
+          name: github-pages-${{ github.run_attempt }}
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
