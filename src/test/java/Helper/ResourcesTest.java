@@ -17,8 +17,15 @@ public class ResourcesTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "/images/Crate.png",
-            "/images/floors/WoodFloor.png"
+            "/images/objects/Armchair.png",
+            "/images/objects/Bookshelf.png",
+            "/images/objects/Chest.png",
+            "/images/objects/Crate.png",
+            "/images/objects/Door.png",
+            "/images/objects/Painting.png",
+            "/images/objects/PottedPlant.png",
+            "/images/objects/WallClock.png",
+            "/images/objects/Window.png",
     })
     void requiredObjImageExists(String path) {
         assertNotNull(getClass().getResource(path), "Missing image: " + path);

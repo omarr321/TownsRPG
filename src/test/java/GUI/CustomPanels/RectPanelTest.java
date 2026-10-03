@@ -55,7 +55,7 @@ public class RectPanelTest {
 
     @Test
     void imageConstructorSetsBounds() {
-        RectPanel panel = new RectPanel(7, 8, 50, 60, "/images/Crate.png");
+        RectPanel panel = new RectPanel(7, 8, 50, 60, "/images/objects/Crate.png");
 
         assertEquals(new Rectangle(7, 8, 50, 60), panel.getBounds());
         assertFalse(panel.isOpaque());
@@ -63,7 +63,7 @@ public class RectPanelTest {
 
     @Test
     void imageBorderThicknessConstructorSetsBounds() {
-        RectPanel panel = new RectPanel(7, 8, 50, 60, "/images/Crate.png", Color.BLACK, 3);
+        RectPanel panel = new RectPanel(7, 8, 50, 60, "/images/objects/Crate.png", Color.BLACK, 3);
 
         assertEquals(new Rectangle(7, 8, 50, 60), panel.getBounds());
         assertFalse(panel.isOpaque());

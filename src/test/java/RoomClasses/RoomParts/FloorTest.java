@@ -56,10 +56,10 @@ public class FloorTest {
 
     @Test
     void imageConstructor() {
-        Floor part = new Floor("/images/Crate.png");
+        Floor part = new Floor("/images/objects/Crate.png");
 
         assertEquals(RoomObj.DrawType.IMAGE, part.getType());
-        assertEquals("/images/Crate.png", part.getImagePath());
+        assertEquals("/images/objects/Crate.png", part.getImagePath());
         assertNull(part.getColor());
         assertTrue(part.getWarped());
         assertNull(part.getRoomPart());
@@ -67,7 +67,7 @@ public class FloorTest {
 
     @Test
     void imageConstructorWithWarpFalse() {
-        Floor part = new Floor("/images/Crate.png", false);
+        Floor part = new Floor("/images/objects/Crate.png", false);
 
         assertEquals(RoomObj.DrawType.IMAGE, part.getType());
         assertFalse(part.getWarped());
@@ -75,7 +75,7 @@ public class FloorTest {
 
     @Test
     void imageConstructorWithWarpTrue() {
-        Floor part = new Floor("/images/Crate.png", true);
+        Floor part = new Floor("/images/objects/Crate.png", true);
 
         assertTrue(part.getWarped());
     }
@@ -104,7 +104,7 @@ public class FloorTest {
 
     @Test
     void setImagePathChangesPath() {
-        Floor part = new Floor("/images/Crate.png");
+        Floor part = new Floor("/images/objects/Crate.png");
 
         part.setImagePath("/images/walls/BrickWall.png");
 

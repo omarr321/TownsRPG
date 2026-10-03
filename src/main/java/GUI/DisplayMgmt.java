@@ -623,7 +623,7 @@ public class DisplayMgmt {
             testP.drawLine(0, 100);
             testP.drawLine(90, 300);
             testP.drawLine(180, 100);
-            BasicObj testObj = new BasicObj(testP.getPoints(), "/images/Crate.png", false);
+            BasicObj testObj = new BasicObj(testP.getPoints(), "/images/objects/Crate.png", false);
             testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.BLOCK));
 
             room.getLookingWall().addRoomObj("testObj", testObj);
@@ -637,7 +637,7 @@ public class DisplayMgmt {
             testP.drawLine(0, 100);
             testP.drawLine(90, 300);
             testP.drawLine(180, 100);
-            testObj = new BasicObj(testP.getPoints(), "/images/Crate.png", false);
+            testObj = new BasicObj(testP.getPoints(), "/images/objects/Crate.png", false);
             testObj.addLightBlocker("obj", new LightBlocker(testObj, LightBlocker.LightTag.LIT));
             testObj.getLightBlocker("obj").setLitBlend(.35f);
 
@@ -647,7 +647,7 @@ public class DisplayMgmt {
             testP.drawLine(0, 50);
             testP.drawLine(90, 50);
             testP.drawLine(180, 50);
-            InteractableObj testObj1 = new InteractableObj(testP.getPoints(), "/images/Crate.png", false);
+            InteractableObj testObj1 = new InteractableObj(testP.getPoints(), "/images/objects/Crate.png", false);
             testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
             testObj1.getLightBlocker("obj").setReflectDist(75);
 

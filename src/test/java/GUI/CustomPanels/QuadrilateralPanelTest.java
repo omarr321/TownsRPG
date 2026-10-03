@@ -92,7 +92,7 @@ public class QuadrilateralPanelTest {
 
     @Test
     void imageConstructorBoundsMatchThePoints() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/Crate.png");
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/objects/Crate.png");
 
         assertEquals(new Rectangle(10, 20, 100, 50), panel.getBounds());
         assertFalse(panel.isOpaque());
@@ -100,14 +100,14 @@ public class QuadrilateralPanelTest {
 
     @Test
     void imageBorderConstructorDefaultsToThicknessOne() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/Crate.png", Color.BLACK);
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/objects/Crate.png", Color.BLACK);
 
         assertEquals(new Rectangle(9, 19, 102, 52), panel.getBounds());
     }
 
     @Test
     void imageBorderConstructorPadsBoundsByThickness() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/Crate.png", Color.BLACK, 5);
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/objects/Crate.png", Color.BLACK, 5);
 
         assertEquals(new Rectangle(5, 15, 110, 60), panel.getBounds());
     }
