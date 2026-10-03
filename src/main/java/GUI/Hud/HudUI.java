@@ -13,31 +13,52 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 
 /**
- * The HudUI class draws the UI elements to the screen. This includes: arrows for navigation, message box.
+ * A {@link LayerUI} overlay that draws the heads-up display on top of a room view.
+ * <p>
+ * The HUD consists of:
+ * <ul>
+ *   <li>Left and right navigation arrows that rotate the player's view.</li>
+ *   <li>A semi-transparent message box along the bottom of the screen, aligned with the
+ *       back wall of the current view.</li>
+ * </ul>
+ * While the message box is showing, the arrows are replaced with their "X" (disabled)
+ * versions and clicking them does nothing.
+ * <p>
+ * Install it on a {@link JLayer} and it will receive the layer's mouse events automatically.
  */
 public class HudUI extends LayerUI<JComponent> {
-    //-----ADJUSTMENT VARIABLES-----//
-    //The width of the left and right arrows.
+    ///-----ADJUSTMENT VARIABLES-----//
+
+    /** The width and height, in unscaled pixels, of the left and right arrows. */
     private static final int ARROW_WIDTH = 120;
-    //Padding for the MessageBox
+
+    /** Inset, in unscaled pixels, between the message box edges and the drawn box. Also spaces the arrows from the box. */
     private static final int MESSAGE_PADDING = 10;
-    //How much space the message box will take up the screen. (ex: .33f is %33).
+
+    /** Fraction of the screen height the message box takes up (for example, {@code .33f} is 33%). */
     private static final float SIZE_RATIO = .30f;
 
     //-----UI IMAGES-----//
+
+    /** Right arrow shown when navigation is available. */
     private static final ImageLoader RIGHT_ARROW = new ImageLoader("/images/UI/arrow_right.png");
+    /** Left arrow shown when navigation is available. */
     private static final ImageLoader LEFT_ARROW = new ImageLoader("/images/UI/arrow_left.png");
+    /** Right arrow shown when navigation is disabled (message showing). */
     private static final ImageLoader RIGHT_ARROW_X = new ImageLoader("/images/UI/arrow_right_x.png");
+    /** Left arrow shown when navigation is disabled (message showing). */
     private static final ImageLoader LEFT_ARROW_X = new ImageLoader("/images/UI/arrow_left_x.png");
 
     private final Room room;
     private boolean showMessage = false;
 
-    private Rectangle leftArrowBounds = new Rectangle();
-    private Rectangle rightArrowBounds = new Rectangle();
+    private final Rectangle leftArrowBounds = new Rectangle();
+    private final Rectangle rightArrowBounds = new Rectangle();
 
     /**
-     * Constructs the hud.
+     * Constructs the HUD for the given room.
+     *
+     * @param room the room whose view this HUD controls; used to turn the view left or right, rebuild the screen, and calculate the message box position
      */
     public HudUI(Room room) {
         this.room = room;
