@@ -10,7 +10,7 @@ public class ImageLoader {
     private Image currImage;
     private boolean usingDefault = false;
     private boolean loaded = false;
-    private static final String DEFAULT_IMAGE = "/images/DebugImage.png";
+    private static final String DEFAULT_IMAGE = "/images/debugging/DebugImage.png";
 
     /**
      * Construct the ImageLoader with the image path provided.

@@ -53,18 +53,18 @@ public class BasicObjTest {
 
     @Test
     void imageConstructor() {
-        BasicObj obj = new BasicObj(corners, "/images/Crate.png");
+        BasicObj obj = new BasicObj(corners, "/images/objects/Crate.png");
 
         assertEquals(RoomObj.DrawType.IMAGE, obj.getType());
         assertNull(obj.getColor());
-        assertEquals("/images/Crate.png", obj.getImagePath());
+        assertEquals("/images/objects/Crate.png", obj.getImagePath());
         assertTrue(obj.getWarped());
         assertSame(corners, obj.getShapeCorners());
     }
 
     @Test
     void imageConstructorWithWarpFalse() {
-        BasicObj obj = new BasicObj(corners, "/images/Crate.png", false);
+        BasicObj obj = new BasicObj(corners, "/images/objects/Crate.png", false);
 
         assertEquals(RoomObj.DrawType.IMAGE, obj.getType());
         assertFalse(obj.getWarped());
@@ -72,7 +72,7 @@ public class BasicObjTest {
 
     @Test
     void imageConstructorWithWarpTrue() {
-        BasicObj obj = new BasicObj(corners, "/images/Crate.png", true);
+        BasicObj obj = new BasicObj(corners, "/images/objects/Crate.png", true);
 
         assertTrue(obj.getWarped());
     }
@@ -90,7 +90,7 @@ public class BasicObjTest {
 
     @Test
     void setColorDoesNotChangeType() {
-        BasicObj obj = new BasicObj(corners, "/images/Crate.png");
+        BasicObj obj = new BasicObj(corners, "/images/objects/Crate.png");
 
         obj.setColor(Color.BLUE);
 
@@ -99,11 +99,11 @@ public class BasicObjTest {
 
     @Test
     void setImagePathChangesPath() {
-        BasicObj obj = new BasicObj(corners, "/images/Crate.png");
+        BasicObj obj = new BasicObj(corners, "/images/objects/Crate.png");
 
-        obj.setImagePath("/images/BrickWall.png");
+        obj.setImagePath("/images/walls/BrickWall.png");
 
-        assertEquals("/images/BrickWall.png", obj.getImagePath());
+        assertEquals("/images/walls/BrickWall.png", obj.getImagePath());
     }
 
     @Test

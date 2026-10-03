@@ -6,6 +6,7 @@ import GUI.Lighting.LightLayer;
 import GUI.Lighting.LightMgmt;
 import GUI.Lighting.LightPoint;
 import Helper.GameSettings;
+import Helper.QuadShapeDrawer;
 import RoomClasses.RoomObjects.InteractableObj;
 import RoomClasses.RoomObjects.RoomObj;
 import RoomClasses.RoomParts.RoomComponent;
@@ -14,6 +15,7 @@ import RoomClasses.RoomParts.RoomPoints;
 import RoomClasses.RoomParts.Wall;
 import RoomClasses.RoomParts.Floor;
 import RoomClasses.RoomParts.Ceiling;
+import Helper.Point;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,10 +30,13 @@ import java.util.List;
 public class Room{
     Wall[] walls = new Wall[4];
     int lookingWall = 0;
-    Floor floor = null;
-    Ceiling ceiling = null;
-    boolean completed = false;
+    Floor floor;
+    Ceiling ceiling;
+    boolean completed;
     RoomPoints roomPoints;
+    private JPanel screenPanel;
+    private LightLayer boundLightLayer;
+    private LightMgmt boundLightMgmt;
 
     /**
      * Constructs a Room with the specified floor, ceiling, and room coordinate points.
@@ -172,27 +177,65 @@ public class Room{
      * @return A JPanel configured with all room components and interactive objects.
      */
     public JPanel putToScreen() {
-        JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
-        panel.setLayout(null);
+        screenPanel = new JPanel();
+        screenPanel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
+        screenPanel.setLayout(null);
+        rebuildScreen();
+        return screenPanel;
+    }
+
+    /** Clears and re-adds everything based on the current looking wall. */
+    public void rebuildScreen() {
+        if (screenPanel == null) {
+            return;
+        }
+        screenPanel.removeAll();
 
         if (!this.completed) {
-            System.err.println("Can not put " + this + " to screen as it is an imcomplete room!");
-            return panel;
+            System.err.println("Can not put " + this + " to screen as it is an incomplete room!");
+            return;
         }
 
-        panel.add(convertRoomComponent(this.floor));
-        panel.add(convertRoomComponent(this.ceiling));
+        screenPanel.add(convertRoomComponent(this.floor));
+        screenPanel.add(convertRoomComponent(this.ceiling));
         for (RoomComponent rc : this.walls) {
-            panel.add(convertRoomComponent(rc));
+            screenPanel.add(convertRoomComponent(rc));
         }
 
-        QuadrilateralPanel[] temp = this.getLookingWall().putToScreen();
-        for(QuadrilateralPanel t : temp) {
-            panel.add(t, 0);
+        for (QuadrilateralPanel t : this.getLookingWall().putToScreen()) {
+            screenPanel.add(t, 0);
         }
 
-        return panel;
+        refreshLighting();
+
+        screenPanel.revalidate();
+        screenPanel.repaint();
+    }
+
+    /**
+     * Remembers the light layer and light manager so the lighting can be rebuilt automatically
+     * whenever the view changes (see {@link #rebuildScreen()}).
+     * @param ll The LightLayer holding the blockers.
+     * @param lm The LightMgmt holding the light points.
+     */
+    public void bindLighting(LightLayer ll, LightMgmt lm) {
+        this.boundLightLayer = ll;
+        this.boundLightMgmt = lm;
+        refreshLighting();
+    }
+
+    /**
+     * Throws away the old blockers and light points and loads the ones for the current looking wall.
+     * Does nothing until {@link #bindLighting(LightLayer, LightMgmt)} has been called.
+     */
+    public void refreshLighting() {
+        if (boundLightLayer == null || boundLightMgmt == null || !this.completed) {
+            return;
+        }
+        boundLightLayer.clearBlockers();
+        boundLightMgmt.clearLights();
+        updateLightLayer(boundLightLayer);
+        updateLightMgmt(boundLightMgmt);
     }
 
     /**
@@ -201,7 +244,7 @@ public class Room{
      */
     public void updateLightLayer(LightLayer ll) {
         if (!this.completed) {
-            System.err.println("Can not update " + this + " lights as it is an imcomplete room!");
+            System.err.println("Can not update " + this + " lights as it is an incomplete room!");
             return;
         }
 
@@ -256,5 +299,20 @@ public class Room{
             }
         }
         return result;
+    }
+
+    public Point[] getMessageBoxPoints(float scale) {
+        Point[] backwallPoints = this.roomPoints.getPartPoints(this.getLookingWall().getRoomPart());
+
+        int height = (int)(GameSettings.screenHeight * scale);
+        int length = QuadShapeDrawer.calcDist(backwallPoints[0], backwallPoints[1]);
+
+        Point screenTop = new Point(backwallPoints[0].getX(), GameSettings.screenHeight - height);
+        QuadShapeDrawer messageBox = new QuadShapeDrawer(screenTop);
+        messageBox.drawLine(0, length);
+        messageBox.drawLine(90, height);
+        messageBox.drawLine(180, length);
+
+        return messageBox.getPoints();
     }
 }

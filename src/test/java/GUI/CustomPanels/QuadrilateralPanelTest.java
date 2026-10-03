@@ -92,7 +92,7 @@ public class QuadrilateralPanelTest {
 
     @Test
     void imageConstructorBoundsMatchThePoints() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/Crate.png");
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/objects/Crate.png");
 
         assertEquals(new Rectangle(10, 20, 100, 50), panel.getBounds());
         assertFalse(panel.isOpaque());
@@ -100,14 +100,14 @@ public class QuadrilateralPanelTest {
 
     @Test
     void imageBorderConstructorDefaultsToThicknessOne() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/Crate.png", Color.BLACK);
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/objects/Crate.png", Color.BLACK);
 
         assertEquals(new Rectangle(9, 19, 102, 52), panel.getBounds());
     }
 
     @Test
     void imageBorderConstructorPadsBoundsByThickness() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/Crate.png", Color.BLACK, 5);
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/objects/Crate.png", Color.BLACK, 5);
 
         assertEquals(new Rectangle(5, 15, 110, 60), panel.getBounds());
     }
@@ -173,7 +173,7 @@ public class QuadrilateralPanelTest {
 
     @Test
     void warpedImagePaintsSomething() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/BrickWall.png");
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/walls/BrickWall.png");
 
         BufferedImage image = assertDoesNotThrow(() -> render(panel));
 
@@ -182,7 +182,7 @@ public class QuadrilateralPanelTest {
 
     @Test
     void warpedImageOnASlantedShapeLeavesOutsideTransparent() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(trapezoid(), "/images/BrickWall.png");
+        QuadrilateralPanel panel = new QuadrilateralPanel(trapezoid(), "/images/walls/BrickWall.png");
 
         BufferedImage image = render(panel);
 
@@ -192,7 +192,7 @@ public class QuadrilateralPanelTest {
 
     @Test
     void unwarpedImagePaintsSomething() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/BrickWall.png");
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/walls/BrickWall.png");
         panel.setImageWarp(false);
 
         BufferedImage image = assertDoesNotThrow(() -> render(panel));
@@ -202,7 +202,7 @@ public class QuadrilateralPanelTest {
 
     @Test
     void unwarpedImageIsClippedToTheShape() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(trapezoid(), "/images/BrickWall.png");
+        QuadrilateralPanel panel = new QuadrilateralPanel(trapezoid(), "/images/walls/BrickWall.png");
         panel.setImageWarp(false);
 
         BufferedImage image = render(panel);
@@ -213,7 +213,7 @@ public class QuadrilateralPanelTest {
 
     @Test
     void warpCanBeToggledBackAndForth() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/BrickWall.png");
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/walls/BrickWall.png");
 
         panel.setImageWarp(false);
         assertDoesNotThrow(() -> render(panel));
@@ -225,7 +225,7 @@ public class QuadrilateralPanelTest {
     @Test
     void paintingTwiceGivesTheSameResult() {
         // the warp is cached after the first paint, the cached picture must match the first one
-        QuadrilateralPanel panel = new QuadrilateralPanel(trapezoid(), "/images/BrickWall.png");
+        QuadrilateralPanel panel = new QuadrilateralPanel(trapezoid(), "/images/walls/BrickWall.png");
 
         BufferedImage first = render(panel);
         BufferedImage second = render(panel);
@@ -248,7 +248,7 @@ public class QuadrilateralPanelTest {
 
     @Test
     void imageBorderIsDrawnOnTopOfTheImage() {
-        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/BrickWall.png", Color.MAGENTA, 4);
+        QuadrilateralPanel panel = new QuadrilateralPanel(rect(), "/images/walls/BrickWall.png", Color.MAGENTA, 4);
         panel.setImageWarp(false);
 
         BufferedImage image = render(panel);

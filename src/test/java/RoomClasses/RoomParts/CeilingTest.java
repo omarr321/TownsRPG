@@ -56,10 +56,10 @@ public class CeilingTest {
 
     @Test
     void imageConstructor() {
-        Ceiling part = new Ceiling("/images/Crate.png");
+        Ceiling part = new Ceiling("/images/objects/Crate.png");
 
         assertEquals(RoomObj.DrawType.IMAGE, part.getType());
-        assertEquals("/images/Crate.png", part.getImagePath());
+        assertEquals("/images/objects/Crate.png", part.getImagePath());
         assertNull(part.getColor());
         assertTrue(part.getWarped());
         assertNull(part.getRoomPart());
@@ -67,7 +67,7 @@ public class CeilingTest {
 
     @Test
     void imageConstructorWithWarpFalse() {
-        Ceiling part = new Ceiling("/images/Crate.png", false);
+        Ceiling part = new Ceiling("/images/objects/Crate.png", false);
 
         assertEquals(RoomObj.DrawType.IMAGE, part.getType());
         assertFalse(part.getWarped());
@@ -75,7 +75,7 @@ public class CeilingTest {
 
     @Test
     void imageConstructorWithWarpTrue() {
-        Ceiling part = new Ceiling("/images/Crate.png", true);
+        Ceiling part = new Ceiling("/images/objects/Crate.png", true);
 
         assertTrue(part.getWarped());
     }
@@ -104,11 +104,11 @@ public class CeilingTest {
 
     @Test
     void setImagePathChangesPath() {
-        Ceiling part = new Ceiling("/images/Crate.png");
+        Ceiling part = new Ceiling("/images/objects/Crate.png");
 
-        part.setImagePath("/images/BrickWall.png");
+        part.setImagePath("/images/walls/BrickWall.png");
 
-        assertEquals("/images/BrickWall.png", part.getImagePath());
+        assertEquals("/images/walls/BrickWall.png", part.getImagePath());
     }
 
     @Test

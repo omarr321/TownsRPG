@@ -57,10 +57,10 @@ public class WallTest {
 
     @Test
     void imageConstructor() {
-        Wall wall = new Wall("/images/BrickWall.png");
+        Wall wall = new Wall("/images/walls/BrickWall.png");
 
         assertEquals(RoomObj.DrawType.IMAGE, wall.getType());
-        assertEquals("/images/BrickWall.png", wall.getImagePath());
+        assertEquals("/images/walls/BrickWall.png", wall.getImagePath());
         assertNull(wall.getColor());
         assertTrue(wall.getWarped());
         assertNull(wall.getRoomPart());
@@ -68,7 +68,7 @@ public class WallTest {
 
     @Test
     void imageConstructorWithWarpFalse() {
-        Wall wall = new Wall("/images/BrickWall.png", false);
+        Wall wall = new Wall("/images/walls/BrickWall.png", false);
 
         assertEquals(RoomObj.DrawType.IMAGE, wall.getType());
         assertFalse(wall.getWarped());
@@ -102,11 +102,11 @@ public class WallTest {
 
     @Test
     void setImagePathChangesPath() {
-        Wall wall = new Wall("/images/BrickWall.png");
+        Wall wall = new Wall("/images/walls/BrickWall.png");
 
-        wall.setImagePath("/images/Crate.png");
+        wall.setImagePath("/images/objects/Crate.png");
 
-        assertEquals("/images/Crate.png", wall.getImagePath());
+        assertEquals("/images/objects/Crate.png", wall.getImagePath());
     }
 
     @Test
@@ -298,7 +298,7 @@ public class WallTest {
     void putToScreenMakesOnePanelPerRoomObj() {
         Wall wall = new Wall(Color.RED);
         wall.addRoomObj("a", solidObj(10, 20, 50, 30));
-        wall.addRoomObj("b", new BasicObj(corners(100, 100, 40, 40), "/images/Crate.png", false));
+        wall.addRoomObj("b", new BasicObj(corners(100, 100, 40, 40), "/images/objects/Crate.png", false));
 
         QuadrilateralPanel[] panels = wall.putToScreen();
 
@@ -309,7 +309,7 @@ public class WallTest {
     void putToScreenPanelsMatchTheRoomObjCorners() {
         Wall wall = new Wall(Color.RED);
         wall.addRoomObj("solid", solidObj(10, 20, 50, 30));
-        wall.addRoomObj("image", new BasicObj(corners(100, 200, 40, 60), "/images/Crate.png", false));
+        wall.addRoomObj("image", new BasicObj(corners(100, 200, 40, 60), "/images/objects/Crate.png", false));
 
         List<Rectangle> bounds = java.util.Arrays.stream(wall.putToScreen())
                 .map(QuadrilateralPanel::getBounds)
