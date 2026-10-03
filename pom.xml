@@ -150,7 +150,6 @@
                 </executions>
             </plugin>
 
-            <!-- Replaced external jpackage plugin with standard exec-maven-plugin using JDK 25 native jpackage -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -166,7 +165,7 @@
                             <executable>jpackage</executable>
                             <arguments>
                                 <argument>--type</argument>
-                                <argument>app-image</argument>
+                                <argument>deb</argument>
                                 <argument>--name</argument>
                                 <argument>TownsRPG</argument>
                                 <argument>--input</argument>
@@ -177,6 +176,8 @@
                                 <argument>GUI.DisplayMgmt</argument>
                                 <argument>--dest</argument>
                                 <argument>${project.build.directory}/installer</argument>
+                                <argument>--app-version</argument>
+                                <argument>${project.version}</argument>
                             </arguments>
                         </configuration>
                     </execution>
