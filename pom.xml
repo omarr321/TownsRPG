@@ -6,7 +6,7 @@
     <groupId>com.townsrpg</groupId>
     <artifactId>townsrpg</artifactId>
     <name>Towns RPG Engine</name>
-    <version>Alpha</version>
+    <version>0.1.0-Pre-alpha</version>
 
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
@@ -94,7 +94,7 @@
                 <version>3.6.0</version>
                 <dependencies>
                     <!-- Pin a recent Checkstyle: the plugin's default one is old and may not parse newer Java syntax -->
-                     <dependency>
+                    <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
                         <version>13.10.0</version>
@@ -127,6 +127,60 @@
                     <top><![CDATA[<script src="/TownsRPG/nav.js"></script>]]></top>
                     <show>protected</show>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>GUI.DisplayMgmt</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Replaced external jpackage plugin with standard exec-maven-plugin using JDK 25 native jpackage -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>create-native-installer</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>jpackage</executable>
+                            <arguments>
+                                <argument>--type</argument>
+                                <argument>app-image</argument>
+                                <argument>--name</argument>
+                                <argument>TownsRPG</argument>
+                                <argument>--input</argument>
+                                <argument>target</argument>
+                                <argument>--main-jar</argument>
+                                <argument>${project.artifactId}-${project.version}.jar</argument>
+                                <argument>--main-class</argument>
+                                <argument>GUI.DisplayMgmt</argument>
+                                <argument>--dest</argument>
+                                <argument>target/installer</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

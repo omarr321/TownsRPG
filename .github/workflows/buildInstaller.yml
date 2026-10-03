@@ -27,12 +27,15 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # 1. Package your app and run jpackage (via Maven plugin or exec)
       - name: Build Native Package via Maven
-        run: mvn clean package
+        run: mvn clean package # Make sure your pom.xml includes the jpackage execution
 
+      # 2. Isolate ONLY the final installer, excluding source code and workflows
       - name: Prepare Release Artifact
         run: |
           mkdir -p release-bundle
+          # Copy only the built native installer from target/ (e.g., .deb, .rpm, .msi, etc.)
           find target -name "*.deb" -o -name "*.rpm" -o -name "*.msi" -o -name "*.exe" -o -name "*.dmg" -exec cp {} release-bundle/ \;
           ls -R release-bundle
 
