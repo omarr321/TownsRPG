@@ -9,9 +9,15 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Java-25-orange" alt="Java 25">
   <img src="https://img.shields.io/badge/Build-Maven-blue" alt="Maven">
-  <img src="https://img.shields.io/badge/Status-Pre--alpha-red" alt="Alpha">
+  <img src="https://img.shields.io/badge/Status-Pre--release-red" alt="Alpha">
   <img src="https://img.shields.io/badge/Current_Release-None-red" alt="None">
 </p>
+
+[![Checking JUnit Tests](https://github.com/omarr321/TownsRPG/actions/workflows/junit.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/junit.yml)
+[![Checking JaCoCo Coverage](https://github.com/omarr321/TownsRPG/actions/workflows/jacoco.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/jacoco.yml)
+[![Checking Checkstyle](https://github.com/omarr321/TownsRPG/actions/workflows/checkstyle.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/checkstyle.yml)
+[![Generating JavaDocs](https://github.com/omarr321/TownsRPG/actions/workflows/buildjavadocs.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/buildjavadocs.yml)
+[![Build Native Installers](https://github.com/omarr321/TownsRPG/actions/workflows/buildInstaller.yml/badge.svg?branch=main)](https://github.com/omarr321/TownsRPG/actions/workflows/buildInstaller.yml)
 
 > [!NOTE]
 > This project is currently under active development. No stable releases are available yet, and APIs or features may change without notice. Use at your own risk.
