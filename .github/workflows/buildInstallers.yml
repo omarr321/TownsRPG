@@ -53,8 +53,8 @@ jobs:
         shell: cmd
         run: mvn clean package -Djpackage.type=${{ matrix.type }}
 
-      - name: Build Native Package (Unix/Mac)
-        if: !startsWith(matrix.os, 'windows')
+      - name: Build Native Package (Unix/Mac)\
+        if: matrix.os != 'windows-latest'
         run: mvn clean package -Djpackage.type=${{ matrix.type }}
 
       - name: Prepare Release Artifact
