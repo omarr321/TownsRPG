@@ -1,4 +1,4 @@
-name: Build Native Installer
+name: Build Native Installers
 
 on:
   push:
@@ -11,10 +11,27 @@ concurrency:
 
 jobs:
   build-installer:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            type: deb
+            ext: deb
+          - os: ubuntu-latest
+            type: rpm
+            ext: rpm
+          - os: windows-latest
+            type: msi
+            ext: msi
+          - os: windows-latest
+            type: exe
+            ext: exe
+          - os: macos-latest
+            type: dmg
+            ext: dmg
 
-    permissions:
-      contents: read
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
@@ -27,18 +44,22 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Install Linux Packaging Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
+
       - name: Build Native Package via Maven
-        run: mvn clean package
+        run: mvn clean package -Djpackage.type=${{ matrix.type }}
 
       - name: Prepare Release Artifact
+        shell: bash
         run: |
           mkdir -p release-bundle
-          # Copy the generated installer from the dedicated jpackage destination folder
-          cp target/installer/*.deb release-bundle/
+          find target/installer -name "*.${{ matrix.ext }}" -exec cp {} release-bundle/ \;
           ls -R release-bundle
 
       - name: Upload Native Installer Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: native-installer-${{ github.run_attempt }}
+          name: native-installer-${{ matrix.type }}-${{ github.run_attempt }}
           path: release-bundle/
