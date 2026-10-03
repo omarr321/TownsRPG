@@ -51,17 +51,17 @@ public class RoomObjTest {
 
     @Test
     void imageConstructorSetsImageDefaults() {
-        RoomObj obj = new BasicObj(CORNERS, "/images/Crate.png");
+        RoomObj obj = new BasicObj(CORNERS, "/images/objects/Crate.png");
 
         assertEquals(RoomObj.DrawType.IMAGE, obj.type);
         assertNull(obj.color);
-        assertEquals("/images/Crate.png", obj.imagePath);
+        assertEquals("/images/objects/Crate.png", obj.imagePath);
         assertTrue(obj.warped);
     }
 
     @Test
     void warpedConstructorCanTurnWarpOff() {
-        RoomObj obj = new BasicObj(CORNERS, "/images/Crate.png", false);
+        RoomObj obj = new BasicObj(CORNERS, "/images/objects/Crate.png", false);
 
         assertEquals(RoomObj.DrawType.IMAGE, obj.type);
         assertFalse(obj.warped);
@@ -69,7 +69,7 @@ public class RoomObjTest {
 
     @Test
     void warpedConstructorCanKeepWarpOn() {
-        RoomObj obj = new BasicObj(CORNERS, "/images/Crate.png", true);
+        RoomObj obj = new BasicObj(CORNERS, "/images/objects/Crate.png", true);
 
         assertTrue(obj.warped);
     }

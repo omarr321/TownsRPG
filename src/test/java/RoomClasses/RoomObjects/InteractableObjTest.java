@@ -72,16 +72,16 @@ public class InteractableObjTest {
 
     @Test
     void imageConstructor() {
-        InteractableObj obj = new InteractableObj(corners, "/images/Crate.png");
+        InteractableObj obj = new InteractableObj(corners, "/images/objects/Crate.png");
 
         assertEquals(RoomObj.DrawType.IMAGE, obj.getType());
-        assertEquals("/images/Crate.png", obj.getImagePath());
+        assertEquals("/images/objects/Crate.png", obj.getImagePath());
         assertTrue(obj.getWarped());
     }
 
     @Test
     void imageConstructorWithWarp() {
-        InteractableObj obj = new InteractableObj(corners, "/images/Crate.png", false);
+        InteractableObj obj = new InteractableObj(corners, "/images/objects/Crate.png", false);
 
         assertEquals(RoomObj.DrawType.IMAGE, obj.getType());
         assertFalse(obj.getWarped());

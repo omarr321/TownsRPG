@@ -481,7 +481,7 @@ public class LightBlockerTest {
 
     @Test
     void alphaImageOfImageRoomObjectIsNotEmpty() {
-        BasicObj obj = new BasicObj(rectCorners(), "/images/BrickWall.png", false);
+        BasicObj obj = new BasicObj(rectCorners(), "/images/walls/BrickWall.png", false);
         LightBlocker blocker = new LightBlocker(obj, LightTag.BLOCK);
 
         BufferedImage image = blocker.getAlphaImage(new Rectangle(10, 20, 100, 50));
@@ -501,7 +501,7 @@ public class LightBlockerTest {
 
     @Test
     void alphaImageOfWarpedImageRoomObjectDoesNotThrow() {
-        BasicObj obj = new BasicObj(trapezoidCorners(), "/images/BrickWall.png", true);
+        BasicObj obj = new BasicObj(trapezoidCorners(), "/images/walls/BrickWall.png", true);
         LightBlocker blocker = new LightBlocker(obj, LightTag.BLOCK);
 
         assertDoesNotThrow(() -> blocker.getAlphaImage(new Rectangle(0, 0, 100, 100)));

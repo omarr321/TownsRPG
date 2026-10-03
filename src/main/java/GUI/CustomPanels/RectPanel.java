@@ -19,7 +19,7 @@ public class RectPanel extends JPanel {
 
     private String imagePath = "";
     private boolean usesImage = false;
-    private static final String DEFAULT_IMAGE = "/images/DebugImage.png";
+    private static final String DEFAULT_IMAGE = "/images/debugging/DebugImage.png";
 
     /**
      * Constructs the rectangular panel using the values provided.

@@ -6,6 +6,7 @@ import GUI.Lighting.LightLayer;
 import GUI.Lighting.LightMgmt;
 import GUI.Lighting.LightPoint;
 import Helper.GameSettings;
+import Helper.QuadShapeDrawer;
 import RoomClasses.RoomObjects.InteractableObj;
 import RoomClasses.RoomObjects.RoomObj;
 import RoomClasses.RoomParts.RoomComponent;
@@ -14,6 +15,7 @@ import RoomClasses.RoomParts.RoomPoints;
 import RoomClasses.RoomParts.Wall;
 import RoomClasses.RoomParts.Floor;
 import RoomClasses.RoomParts.Ceiling;
+import Helper.Point;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,10 +30,13 @@ import java.util.List;
 public class Room{
     Wall[] walls = new Wall[4];
     int lookingWall = 0;
-    Floor floor = null;
-    Ceiling ceiling = null;
-    boolean completed = false;
+    Floor floor;
+    Ceiling ceiling;
+    boolean completed;
     RoomPoints roomPoints;
+    private JPanel screenPanel;
+    private LightLayer boundLightLayer;
+    private LightMgmt boundLightMgmt;
 
     /**
      * Constructs a Room with the specified floor, ceiling, and room coordinate points.
@@ -66,6 +71,7 @@ public class Room{
      * @return The active looking Wall.
      */
     public Wall getLookingWall() {
+        if (this.isNotCompleted()) return null;
         return this.walls[lookingWall];
     }
 
@@ -74,6 +80,7 @@ public class Room{
      * @return The left Wall.
      */
     public Wall getLeftWall() {
+        if (this.isNotCompleted()) return null;
         int temp = this.lookingWall-1;
         if (temp < 0){temp = 3;}
         return this.walls[temp];
@@ -84,6 +91,7 @@ public class Room{
      * @return The right Wall.
      */
     public Wall getRightWall() {
+        if (this.isNotCompleted()) return null;
         int temp = this.lookingWall+1;
         if (temp > 3){temp = 0;}
         return this.walls[temp];
@@ -94,6 +102,7 @@ public class Room{
      * @return The fourth Wall.
      */
     public Wall getFourthWall() {
+        if (this.isNotCompleted()) return null;
         int temp = this.lookingWall-1;
         if (temp < 0){temp = 3;}
         temp -= 1;
@@ -106,6 +115,7 @@ public class Room{
      * @return An array of the visible Wall components.
      */
     public Wall[]  getVisibleWalls() {
+        if (this.isNotCompleted()) return null;
         Wall[] temp = new Wall[3];
         temp[0] = this.getLeftWall();
         temp[1] = this.getLookingWall();
@@ -132,11 +142,13 @@ public class Room{
     }
 
     private void updateRoomPart() {
+        // Reads the walls directly (not through the getters) because the getters return null
+        // until the room is completed, and this method is what completes it.
         try {
-            this.getLookingWall().setRoomPart(RoomPart.BACK_WALL);
-            this.getLeftWall().setRoomPart(RoomPart.LEFT_WALL);
-            this.getRightWall().setRoomPart(RoomPart.RIGHT_WALL);
-            this.getFourthWall().setRoomPart(RoomPart.FOURTH_WALL);
+            this.walls[this.lookingWall].setRoomPart(RoomPart.BACK_WALL);
+            this.walls[(this.lookingWall + 3) % 4].setRoomPart(RoomPart.LEFT_WALL);
+            this.walls[(this.lookingWall + 1) % 4].setRoomPart(RoomPart.RIGHT_WALL);
+            this.walls[(this.lookingWall + 2) % 4].setRoomPart(RoomPart.FOURTH_WALL);
             this.ceiling.setRoomPart(RoomPart.CEILING);
             this.floor.setRoomPart(RoomPart.FLOOR);
             this.completed = true;
@@ -149,6 +161,7 @@ public class Room{
      * Rotates the player's view to the right, updating the active looking wall.
      */
     public void lookRight() {
+        if (this.isNotCompleted()) return;
         this.lookingWall++;
         if (this.lookingWall > walls.length - 1){
             this.lookingWall = 0;
@@ -160,6 +173,7 @@ public class Room{
      * Rotates the player's view to the left, updating the active looking wall.
      */
     public void lookLeft() {
+        if (this.isNotCompleted()) return;
         this.lookingWall--;
         if (this.lookingWall < 0){
             this.lookingWall = walls.length - 1;
@@ -172,27 +186,70 @@ public class Room{
      * @return A JPanel configured with all room components and interactive objects.
      */
     public JPanel putToScreen() {
-        JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
-        panel.setLayout(null);
+        if (this.isNotCompleted()) return null;
+        screenPanel = new JPanel();
+        screenPanel.setPreferredSize(new Dimension(GameSettings.screenWidth, GameSettings.screenHeight));
+        screenPanel.setLayout(null);
+        rebuildScreen();
+        return screenPanel;
+    }
 
+    private boolean isNotCompleted() {
         if (!this.completed) {
-            System.err.println("Can not put " + this + " to screen as it is an imcomplete room!");
-            return panel;
+            System.err.println("Can not put " + this + " to screen as it is an incomplete room!");
         }
+        return !this.completed;
+    }
 
-        panel.add(convertRoomComponent(this.floor));
-        panel.add(convertRoomComponent(this.ceiling));
+    /** Clears and re-adds everything based on the current looking wall. */
+    public void rebuildScreen() {
+        if (screenPanel == null) {
+            return;
+        }
+        screenPanel.removeAll();
+
+        if (this.isNotCompleted()) return;
+
+        screenPanel.add(convertRoomComponent(this.floor));
+        screenPanel.add(convertRoomComponent(this.ceiling));
         for (RoomComponent rc : this.walls) {
-            panel.add(convertRoomComponent(rc));
+            screenPanel.add(convertRoomComponent(rc));
         }
 
-        QuadrilateralPanel[] temp = this.getLookingWall().putToScreen();
-        for(QuadrilateralPanel t : temp) {
-            panel.add(t, 0);
+        for (QuadrilateralPanel t : this.getLookingWall().putToScreen()) {
+            screenPanel.add(t, 0);
         }
 
-        return panel;
+        refreshLighting();
+
+        screenPanel.revalidate();
+        screenPanel.repaint();
+    }
+
+    /**
+     * Remembers the light layer and light manager so the lighting can be rebuilt automatically
+     * whenever the view changes (see {@link #rebuildScreen()}).
+     * @param ll The LightLayer holding the blockers.
+     * @param lm The LightMgmt holding the light points.
+     */
+    public void bindLighting(LightLayer ll, LightMgmt lm) {
+        this.boundLightLayer = ll;
+        this.boundLightMgmt = lm;
+        refreshLighting();
+    }
+
+    /**
+     * Throws away the old blockers and light points and loads the ones for the current looking wall.
+     * Does nothing until {@link #bindLighting(LightLayer, LightMgmt)} has been called.
+     */
+    public void refreshLighting() {
+        if (boundLightLayer == null || boundLightMgmt == null || this.isNotCompleted()) {
+            return;
+        }
+        boundLightLayer.clearBlockers();
+        boundLightMgmt.clearLights();
+        updateLightLayer(boundLightLayer);
+        updateLightMgmt(boundLightMgmt);
     }
 
     /**
@@ -200,10 +257,7 @@ public class Room{
      * @param ll The LightLayer to update.
      */
     public void updateLightLayer(LightLayer ll) {
-        if (!this.completed) {
-            System.err.println("Can not update " + this + " lights as it is an imcomplete room!");
-            return;
-        }
+        if (this.isNotCompleted()) return;
 
         ArrayList<LightBlocker> lightBlockers = new ArrayList<>();
         lightBlockers.add(new LightBlocker(convertRoomComponent(this.floor), LightBlocker.LightTag.REFLECT));
@@ -256,5 +310,47 @@ public class Room{
             }
         }
         return result;
+    }
+
+    /**
+     * Calculates the four corner points of the message box drawn at the bottom of the screen.
+     * <p>
+     * The box is aligned with the back wall of the current view: its left edge starts at the
+     * x-position of the back wall's first point, and its width matches the length of the back
+     * wall's top edge (the distance between its first two points). Its height is the given
+     * fraction of the screen height, and it sits against the bottom of the screen.
+     * <p>
+     * The points are returned in drawing order: top-left, top-right, bottom-right, bottom-left.
+     *
+     * @param scale the fraction of the screen height the box should take up, for example
+     *              {@code 0.30f} for 30%
+     * @return an array of four {@link Point}s describing the message box corners, or
+     *         {@code null} if the room is not completed yet
+     */
+    public Point[] getMessageBoxPoints(float scale) {
+        if (this.isNotCompleted()) return null;
+        Point[] backWallPoints = this.roomPoints.getPartPoints(this.getLookingWall().getRoomPart());
+
+        int height = (int)(GameSettings.screenHeight * scale);
+        int length = QuadShapeDrawer.calcDist(backWallPoints[0], backWallPoints[1]);
+
+        Point screenTop = new Point(backWallPoints[0].getX(), GameSettings.screenHeight - height);
+        QuadShapeDrawer messageBox = new QuadShapeDrawer(screenTop);
+        messageBox.drawLine(0, length);
+        messageBox.drawLine(90, height);
+        messageBox.drawLine(180, length);
+
+        return messageBox.getPoints();
+    }
+
+    //For testing
+    JPanel getScreenPanel() {
+        return this.screenPanel;
+    }
+    LightLayer getBoundLightLayer() {
+        return this.boundLightLayer;
+    }
+    LightMgmt getBoundLightMgmt() {
+        return this.boundLightMgmt;
     }
 }
