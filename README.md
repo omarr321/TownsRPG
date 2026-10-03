@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/omarr321/TownsRPG/main/src/main/resources/branding/logo.svg" alt="Towns RPG Engine" width="520">
+  <img src="https://raw.githubusercontent.com/omarr321/TownsRPG/main/src/main/resources/branding/logo.svg" alt="Towns RPG engine" width="520">
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 ## What is it?
 
-TownsRPG Engine is a small 2D Java Swing engine that draws first-person, 3D-styled rooms. You stand in the middle of a room, turn left and right to look at each of its four walls, and click on objects to interact with them. Rooms are lit in real time with colored point lights, shadows, and reflections.
+TownsRPG engine is a small 2D Java Swing engine that draws first-person, 3D-styled rooms. You stand in the middle of a room, turn left and right to look at each of its four walls, and click on objects to interact with them. Rooms are lit in real time with colored point lights, shadows, and reflections.
  
 ## Features
  
@@ -54,7 +54,7 @@ git clone https://github.com/omarr321/TownsRPG.git
 cd TownsRPG
 
 mvn compile
-mvn exec:java -Dexec.mainClass=GUI.DisplayMgmt
+mvn exec:java -Dexec.mainClass=gui.DisplayMgmt
 ```
 > [!TIP]
 > If the build acts strangely, use `mvn clean compile` to start from a fresh build.
@@ -86,7 +86,7 @@ mvn javadoc:javadoc  # build the API docs
 
 The project enforces some strict standards, and CI runs them on every pull request to `main`:
 
-- **JUnit 5** unit tests for the engine, rendering, lighting, and helper classes.
+- **JUnit 5** unit tests for the engine, rendering, lighting, and helpers classes.
 - **JaCoCo coverage gate.** No missed lines are allowed and instruction coverage must be at least 95%. `DisplayMgmt` is excluded because it is mostly UI wiring.
 - **Checkstyle** requires Javadoc on all public and protected classes, methods, and fields (see [`checkstyle.xml`](https://github.com/omarr321/TownsRPG/blob/main/checkstyle.xml)).
 - **Javadoc build** must succeed.
@@ -102,15 +102,15 @@ The site is rebuilt and deployed to GitHub Pages on every push to `main`.
 
 ```
 src/main/java/
-├── Engine/            Player, flags, and interactions
+├── engine/            Player, flags, and interactions
 │   └── Interactions/  Interactable, BasicInteraction, FlagInteraction, DialogInteraction
-├── GUI/
+├── gui/
 │   ├── DisplayMgmt    Launcher, debug window, and game window (entry point)
 │   ├── CustomPanels/  QuadrilateralPanel (warped textures), RectPanel
 │   ├── Hud/           HudUI overlay (arrows and message box)
 │   └── Lighting/      LightMgmt, LightPoint, LightBlocker, LightLayer, LightingLayerUI
-├── Helper/            GameSettings, ImageLoader, FontWrapper, Point, QuadShapeDrawer
-└── RoomClasses/
+├── helpers/            GameSettings, ImageLoader, FontWrapper, Point, QuadShapeDrawer
+└── room/
     ├── Room           Ties walls, floor, ceiling, lighting, and view direction together
     ├── RoomParts/     Wall, Floor, Ceiling, RoomPoints (room geometry)
     └── RoomObjects/   RoomObj, BasicObj, InteractableObj

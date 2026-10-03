@@ -5,7 +5,7 @@
 
     <groupId>com.townsrpg</groupId>
     <artifactId>townsrpg</artifactId>
-    <name>Towns RPG Engine</name>
+    <name>Towns RPG engine</name>
     <version>${revision}</version>
 
     <properties>
@@ -168,7 +168,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>GUI.DisplayMgmt</mainClass>
+                                    <mainClass>gui.DisplayMgmt</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -225,7 +225,7 @@
                                 <argument>--main-jar</argument>
                                 <argument>${project.artifactId}-${project.version}.jar</argument>
                                 <argument>--main-class</argument>
-                                <argument>GUI.DisplayMgmt</argument>
+                                <argument>gui.DisplayMgmt</argument>
                                 <argument>--dest</argument>
                                 <argument>${project.build.directory}/installer</argument>
                                 <argument>--app-version</argument>
