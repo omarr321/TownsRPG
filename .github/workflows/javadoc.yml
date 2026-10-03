@@ -1,18 +1,18 @@
-name: Checking Checkstyle
+name: Checking Javadoc Build
 
 on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  checkstyle:
+  javadoc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,5 +23,5 @@ jobs:
           java-version: "25"
           cache: maven
 
-      - name: Run Checkstyle
-        run: mvn -B checkstyle:check
+      - name: Build Javadoc
+        run: mvn -B javadoc:javadoc
