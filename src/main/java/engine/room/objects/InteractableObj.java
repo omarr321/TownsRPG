@@ -59,4 +59,18 @@ public class InteractableObj extends BasicObj{
         }
         this.entryPoint.trigger();
     }
+
+    /**
+     * Checks whether a point is inside this object's shape.
+     * @param x The x position to check.
+     * @param y The y position to check.
+     * @return true if the point is inside the shape.
+     */
+    public boolean contains(int x, int y) {
+        Polygon shape = new Polygon();
+        for (Point p : getShapeCorners()) {
+            shape.addPoint(p.getX(), p.getY());
+        }
+        return shape.contains(x, y);
+    }
 }

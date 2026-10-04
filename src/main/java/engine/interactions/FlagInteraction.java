@@ -51,7 +51,7 @@ public class FlagInteraction extends Interactable {
 
     @Override
     public void trigger() {
-        System.out.println(this.getMessage());
+        System.out.println(this.getMessage().getMessage());
         this.nextMessage();
         this.flags.addFlag(this.checkFlag, true);
 

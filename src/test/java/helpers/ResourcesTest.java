@@ -110,7 +110,10 @@ public class ResourcesTest {
             "/images/UI/arrow_straight.png",
             "/images/UI/arrow_left_x.png",
             "/images/UI/arrow_right_x.png",
-            "/images/UI/arrow_straight_x.png"
+            "/images/UI/arrow_straight_x.png",
+            "/images/UI/cursors/cursor.png",
+            "/images/UI/cursors/cursor-clicked.png",
+            "/images/UI/cursors/cursor-highlighted.png"
     })
     void requiredUIExists(String path) {
         assertNotNull(getClass().getResource(path), "Missing UI: " + path);

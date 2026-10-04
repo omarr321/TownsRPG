@@ -1,6 +1,7 @@
 package gui;
 
 import engine.Player;
+import engine.messages.MessageData;
 import engine.room.parts.Ceiling;
 import engine.room.parts.Floor;
 import engine.room.parts.RoomPoints;
@@ -25,11 +26,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.image.BufferedImage;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Objects;
+import java.util.List;
 
 /**
  * Entry point and container for the game's windows.
@@ -118,6 +118,7 @@ public class DisplayMgmt {
         public GraphicWindow(){
             super("Graphics");
             applyIcon(this);
+            GameSettings.setCustomMouse(this);
 
             GameSettings.fullScreen = true;
             GameSettings.screenWidth = 3840;
@@ -234,6 +235,8 @@ public class DisplayMgmt {
         public DebugWindow() {
             setTitle("Debug");
             applyIcon(this);
+            GameSettings.setCustomMouse(this);
+
             if (GameSettings.fullScreen) {
                 GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
                 GraphicsDevice gd = ge.getDefaultScreenDevice();
@@ -517,6 +520,7 @@ public class DisplayMgmt {
                 }
             };
             roomJ.addMouseListener(clicking);
+            GameSettings.setInteractableMouse(roomJ, p -> room.getInteractable().stream().anyMatch(o -> o.contains(p.x, p.y)));
 
             return roomJ;
         }
@@ -575,8 +579,11 @@ public class DisplayMgmt {
             testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
             testObj1.getLightBlocker("obj").setReflectDist(75);
 
-            FlagInteraction temp = new FlagInteraction("This is a test", this.player, "DEBUG_ROOM_1");
-            FlagInteraction temp2 = new FlagInteraction("Second test!", this.player, "DEBUG_ROOM_2");
+
+            MessageData message = new MessageData("This is a test!");
+            FlagInteraction temp = new FlagInteraction(message, this.player, "DEBUG_ROOM_1");
+            message = new MessageData("Second test!");
+            FlagInteraction temp2 = new FlagInteraction(message, this.player, "DEBUG_ROOM_2");
             temp.setNextTrigger(temp2);
             testObj1.setEntryPoint(temp);
 
@@ -654,13 +661,28 @@ public class DisplayMgmt {
             testObj1.addLightBlocker("obj", new LightBlocker(testObj1, LightBlocker.LightTag.REFLECT));
             testObj1.getLightBlocker("obj").setReflectDist(75);
 
-            FlagInteraction temp = new FlagInteraction("This is a box.", "... Still a box.", this.player, "BASIC_ROOM_1");
-            FlagInteraction temp2 = new FlagInteraction("The box is made of wood.", "I think it might... be... maple.", this.player, "BASIC_ROOM_2");
+            MessageData box = new MessageData("This is a box.");
+            Queue<MessageData> replaceMessages = new LinkedList<>();
+            replaceMessages.add(new MessageData("...Still a box."));
+            FlagInteraction temp = new FlagInteraction(box, replaceMessages, this.player, "BASIC_ROOM_1");
+
+            box = new MessageData("The box is made of wood.");
+            replaceMessages = new LinkedList<>();
+            replaceMessages.add(new MessageData("...I think it might be maple..."));
+            replaceMessages.add(new MessageData("...maybe fer..."));
+            replaceMessages.add(new MessageData("...could be oak..."));
+            replaceMessages.add(new MessageData("...looks like pine"));
+            replaceMessages.add(new MessageData("...aspen has that texture..."));
+            replaceMessages.add(new MessageData("...tastes like birch..."));
+            replaceMessages.add(new MessageData("..."));
+            replaceMessages.add(new MessageData("... whatever it is..."));
+            replaceMessages.add(new MessageData("... it is wood."));
+
+            FlagInteraction temp2 = new FlagInteraction(box, replaceMessages, this.player, "BASIC_ROOM_2");
             temp.setNextTrigger(temp2);
             testObj1.setEntryPoint(temp);
 
             room.getLookingWall().addRoomObj("testObj4", testObj1);
-
             Point ULC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
             Point LLC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight - GameSettings.screenHeight * .2)));
             Point URC = new Point(Math.toIntExact(Math.round(GameSettings.screenWidth - GameSettings.screenWidth * .2)), Math.toIntExact(Math.round(GameSettings.screenHeight * .2)));
@@ -733,6 +755,7 @@ public class DisplayMgmt {
                 }
             };
             roomPanel.addMouseListener(interact);
+            GameSettings.setInteractableMouse(roomPanel, p -> room.getInteractable().stream().anyMatch(o -> o.contains(p.x, p.y)));
 
             return hudPanel;
         }
@@ -815,6 +838,7 @@ public class DisplayMgmt {
 
             roomPanel.addMouseListener(followMouse);
             roomPanel.addMouseMotionListener(followMouse);
+            GameSettings.setInteractableMouse(roomPanel, p -> room.getInteractable().stream().anyMatch(o -> o.contains(p.x, p.y)));
 
             // Place the light at the mouse as soon as this panel shows up, even if the mouse hasn't moved
             roomPanel.addHierarchyListener(new HierarchyListener() {
@@ -859,6 +883,8 @@ public class DisplayMgmt {
         public GameWindow() {
             setTitle("Game Window");
             applyIcon(this);
+            GameSettings.setCustomMouse(this);
+
             if (GameSettings.fullScreen) {
                 GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
                 GraphicsDevice gd = ge.getDefaultScreenDevice();

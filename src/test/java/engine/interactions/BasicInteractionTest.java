@@ -1,5 +1,6 @@
 package engine.interactions;
 
+import engine.messages.MessageData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,10 @@ public class BasicInteractionTest {
         System.setOut(originalOut);
     }
 
+    private static MessageData msg(String text) {
+        return new MessageData(text);
+    }
+
     private String[] outputLines() {
         String text = out.toString().trim();
         if (text.isEmpty()) {
@@ -34,19 +39,21 @@ public class BasicInteractionTest {
 
     @Test
     void storesMessage() {
-        BasicInteraction interaction = new BasicInteraction("Hello");
+        MessageData data = msg("Hello");
+        BasicInteraction interaction = new BasicInteraction(data);
 
-        assertEquals("Hello", interaction.getMessage());
+        assertSame(data, interaction.getMessage());
+        assertEquals("Hello", interaction.getMessage().getMessage());
     }
 
     @Test
     void isAnInteractable() {
-        assertInstanceOf(Interactable.class, new BasicInteraction("Hello"));
+        assertInstanceOf(Interactable.class, new BasicInteraction(msg("Hello")));
     }
 
     @Test
     void triggerPrintsMessage() {
-        BasicInteraction interaction = new BasicInteraction("Hello there");
+        BasicInteraction interaction = new BasicInteraction(msg("Hello there"));
 
         interaction.trigger();
 
@@ -55,8 +62,8 @@ public class BasicInteractionTest {
 
     @Test
     void triggerPrintsUpdatedMessage() {
-        BasicInteraction interaction = new BasicInteraction("Old");
-        interaction.setMessage("New");
+        BasicInteraction interaction = new BasicInteraction(msg("Old"));
+        interaction.setMessage(msg("New"));
 
         interaction.trigger();
 
@@ -64,15 +71,24 @@ public class BasicInteractionTest {
     }
 
     @Test
+    void triggerPrintsMessageTextWithoutSenderName() {
+        BasicInteraction interaction = new BasicInteraction(new MessageData("Hello", "Bob"));
+
+        interaction.trigger();
+
+        assertEquals("Hello", out.toString().trim());
+    }
+
+    @Test
     void triggerWithoutNextDoesNotThrow() {
-        BasicInteraction interaction = new BasicInteraction("Hello");
+        BasicInteraction interaction = new BasicInteraction(msg("Hello"));
 
         assertDoesNotThrow(interaction::trigger);
     }
 
     @Test
     void triggerCanBeRepeated() {
-        BasicInteraction interaction = new BasicInteraction("Again");
+        BasicInteraction interaction = new BasicInteraction(msg("Again"));
 
         interaction.trigger();
         interaction.trigger();
@@ -82,8 +98,8 @@ public class BasicInteractionTest {
 
     @Test
     void triggerCallsNextTrigger() {
-        BasicInteraction first = new BasicInteraction("First");
-        BasicInteraction second = new BasicInteraction("Second");
+        BasicInteraction first = new BasicInteraction(msg("First"));
+        BasicInteraction second = new BasicInteraction(msg("Second"));
         first.setNextTrigger(second);
 
         first.trigger();
@@ -93,9 +109,9 @@ public class BasicInteractionTest {
 
     @Test
     void triggerFollowsWholeChainInOrder() {
-        BasicInteraction a = new BasicInteraction("A");
-        BasicInteraction b = new BasicInteraction("B");
-        BasicInteraction c = new BasicInteraction("C");
+        BasicInteraction a = new BasicInteraction(msg("A"));
+        BasicInteraction b = new BasicInteraction(msg("B"));
+        BasicInteraction c = new BasicInteraction(msg("C"));
         a.setNextTrigger(b);
         b.setNextTrigger(c);
 
@@ -106,9 +122,9 @@ public class BasicInteractionTest {
 
     @Test
     void triggeringMiddleOfChainSkipsEarlierOnes() {
-        BasicInteraction a = new BasicInteraction("A");
-        BasicInteraction b = new BasicInteraction("B");
-        BasicInteraction c = new BasicInteraction("C");
+        BasicInteraction a = new BasicInteraction(msg("A"));
+        BasicInteraction b = new BasicInteraction(msg("B"));
+        BasicInteraction c = new BasicInteraction(msg("C"));
         a.setNextTrigger(b);
         b.setNextTrigger(c);
 
@@ -119,8 +135,8 @@ public class BasicInteractionTest {
 
     @Test
     void clearingNextTriggerStopsTheChain() {
-        BasicInteraction first = new BasicInteraction("First");
-        first.setNextTrigger(new BasicInteraction("Second"));
+        BasicInteraction first = new BasicInteraction(msg("First"));
+        first.setNextTrigger(new BasicInteraction(msg("Second")));
         first.setNextTrigger(null);
 
         first.trigger();

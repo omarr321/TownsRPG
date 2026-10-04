@@ -2,6 +2,7 @@ package engine.room.objects;
 
 import engine.interactions.BasicInteraction;
 import engine.interactions.Interactable;
+import engine.messages.MessageData;
 import helpers.GameSettings;
 import helpers.Point;
 import org.junit.jupiter.api.AfterEach;
@@ -25,7 +26,7 @@ public class InteractableObjTest {
         int triggerCount = 0;
 
         CountingInteractable(String message) {
-            super(message);
+            super(new MessageData(message));
         }
 
         @Override
@@ -133,7 +134,7 @@ public class InteractableObjTest {
     @Test
     void triggerPrintsEntryPointMessage() {
         InteractableObj obj = new InteractableObj(corners, Color.RED);
-        obj.setEntryPoint(new BasicInteraction("You found a box."));
+        obj.setEntryPoint(new BasicInteraction(new MessageData("You found a box.")));
 
         obj.trigger();
 
@@ -143,8 +144,8 @@ public class InteractableObjTest {
     @Test
     void triggerRunsWholeInteractionChain() {
         InteractableObj obj = new InteractableObj(corners, Color.RED);
-        BasicInteraction first = new BasicInteraction("First");
-        BasicInteraction second = new BasicInteraction("Second");
+        BasicInteraction first = new BasicInteraction(new MessageData("First"));
+        BasicInteraction second = new BasicInteraction(new MessageData("Second"));
         first.setNextTrigger(second);
         obj.setEntryPoint(first);
 
@@ -188,5 +189,51 @@ public class InteractableObjTest {
 
         assertEquals(0, entry.triggerCount);
         assertTrue(err.toString().contains("entry point"));
+    }
+
+    // ---- contains ----
+
+    @Test
+    void containsPointInsideShape() {
+        InteractableObj obj = new InteractableObj(corners, Color.RED);
+
+        assertTrue(obj.contains(30, 25));
+    }
+
+    @Test
+    void doesNotContainPointFarOutsideShape() {
+        InteractableObj obj = new InteractableObj(corners, Color.RED);
+
+        assertFalse(obj.contains(500, 500));
+        assertFalse(obj.contains(0, 0));
+    }
+
+    @Test
+    void doesNotContainPointJustOutsideEachSide() {
+        InteractableObj obj = new InteractableObj(corners, Color.RED);
+
+        assertFalse(obj.contains(9, 25));
+        assertFalse(obj.contains(61, 25));
+        assertFalse(obj.contains(30, 9));
+        assertFalse(obj.contains(30, 41));
+    }
+
+    @Test
+    void containsFollowsNonRectangularShapes() {
+        Point[] triangle = {new Point(0, 0), new Point(100, 0), new Point(0, 100)};
+        InteractableObj obj = new InteractableObj(triangle, Color.RED);
+
+        assertTrue(obj.contains(20, 20));
+        assertFalse(obj.contains(80, 80));
+    }
+
+    @Test
+    void containsUsesCurrentShapeCorners() {
+        InteractableObj obj = new InteractableObj(corners, Color.RED);
+
+        obj.setShapeCorners(new Point[]{new Point(200, 200), new Point(260, 200), new Point(260, 240), new Point(200, 240)});
+
+        assertFalse(obj.contains(30, 25));
+        assertTrue(obj.contains(230, 220));
     }
 }

@@ -1,5 +1,6 @@
 package engine.interactions;
 
+import engine.messages.MessageData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,37 +29,43 @@ public class DialogInteractionTest {
         System.setOut(originalOut);
     }
 
+    private static MessageData msg(String text) {
+        return new MessageData(text);
+    }
+
     @Test
     void storesMessage() {
-        DialogInteraction interaction = new DialogInteraction("Hi");
+        MessageData data = msg("Hi");
+        DialogInteraction interaction = new DialogInteraction(data);
 
-        assertEquals("Hi", interaction.getMessage());
+        assertSame(data, interaction.getMessage());
+        assertEquals("Hi", interaction.getMessage().getMessage());
     }
 
     @Test
     void setMessageReplacesMessage() {
-        DialogInteraction interaction = new DialogInteraction("Hi");
+        DialogInteraction interaction = new DialogInteraction(msg("Hi"));
 
-        interaction.setMessage("Bye");
+        interaction.setMessage(msg("Bye"));
 
-        assertEquals("Bye", interaction.getMessage());
+        assertEquals("Bye", interaction.getMessage().getMessage());
     }
 
     @Test
     void isAnInteractable() {
-        assertInstanceOf(Interactable.class, new DialogInteraction("Hi"));
+        assertInstanceOf(Interactable.class, new DialogInteraction(msg("Hi")));
     }
 
     @Test
     void triggerDoesNotThrow() {
-        DialogInteraction interaction = new DialogInteraction("Hi");
+        DialogInteraction interaction = new DialogInteraction(msg("Hi"));
 
         assertDoesNotThrow(interaction::trigger);
     }
 
     @Test
     void triggerDoesNotPrintAnything() {
-        DialogInteraction interaction = new DialogInteraction("Hi");
+        DialogInteraction interaction = new DialogInteraction(msg("Hi"));
 
         interaction.trigger();
 
@@ -67,8 +74,8 @@ public class DialogInteractionTest {
 
     @Test
     void nextTriggerCanBeSet() {
-        DialogInteraction interaction = new DialogInteraction("Hi");
-        BasicInteraction next = new BasicInteraction("Next");
+        DialogInteraction interaction = new DialogInteraction(msg("Hi"));
+        BasicInteraction next = new BasicInteraction(msg("Next"));
 
         interaction.setNextTrigger(next);
 

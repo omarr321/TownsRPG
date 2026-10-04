@@ -10,6 +10,7 @@ import java.util.Queue;
 public abstract class Interactable {
     /** The message displayed to the player when this object is triggered. */
     protected MessageData message;
+    /** A queue of replacement messages to use.*/
     protected Queue<MessageData> replacementMessages;
 
     /** The next interactable to trigger after this one, or {@code null} if there is none. */
@@ -61,7 +62,7 @@ public abstract class Interactable {
      * Replaces the current message with the first one in the queue.
      */
     public void nextMessage() {
-        if (this.replacementMessages.isEmpty()) {
+        if (this.replacementMessages == null || this.replacementMessages.isEmpty()) {
             return;
         }
         this.message = this.replacementMessages.remove();
