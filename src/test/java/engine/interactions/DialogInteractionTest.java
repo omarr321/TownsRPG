@@ -1,84 +1,83 @@
 package engine.interactions;
 
 import engine.messages.MessageData;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * DialogInteraction.trigger() is still a TODO in the source, so these tests only cover what exists today.
- * Add tests for the real dialog behavior once it is implemented.
+ * Unit test class for DialogInteraction.
  */
-public class DialogInteractionTest {
-    private final PrintStream originalOut = System.out;
-    private ByteArrayOutputStream out;
+class DialogInteractionTest {
+
+    private MessageData messageData;
+    private DialogInteraction dialogInteraction;
 
     @BeforeEach
-    void captureOutput() {
-        out = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(out, true));
-    }
-
-    @AfterEach
-    void restoreOutput() {
-        System.setOut(originalOut);
-    }
-
-    private static MessageData msg(String text) {
-        return new MessageData(text);
+    void setUp() {
+        messageData = new MessageData("Welcome to the conversation!", "NPC", MessageData.NamePosition.LEFT);
+        dialogInteraction = new DialogInteraction(messageData);
     }
 
     @Test
-    void storesMessage() {
-        MessageData data = msg("Hi");
-        DialogInteraction interaction = new DialogInteraction(data);
-
-        assertSame(data, interaction.getMessage());
-        assertEquals("Hi", interaction.getMessage().getMessage());
+    void testConstructorAndGetMessage() {
+        // Verifies message is properly assigned via constructor and retrievable[cite: 3, 7]
+        assertNotNull(dialogInteraction.getMessage(), "Message should not be null.");
+        assertEquals(messageData, dialogInteraction.getMessage(), "Message should match the provided object[cite: 3, 7].");
+        assertEquals("Welcome to the conversation!", dialogInteraction.getMessage().getMessage(), "Message text should match[cite: 1].");
+        assertEquals("NPC", dialogInteraction.getMessage().getName(), "Sender name should match[cite: 1].");
     }
 
     @Test
-    void setMessageReplacesMessage() {
-        DialogInteraction interaction = new DialogInteraction(msg("Hi"));
+    void testSetMessage() {
+        // Verifies updating the message content works via inherited Interactable methods[cite: 3]
+        MessageData newMessage = new MessageData("Updated dialog line.");
+        dialogInteraction.setMessage(newMessage);
 
-        interaction.setMessage(msg("Bye"));
-
-        assertEquals("Bye", interaction.getMessage().getMessage());
+        assertEquals(newMessage, dialogInteraction.getMessage(), "Message should be updated successfully[cite: 3].");
+        assertEquals("Updated dialog line.", dialogInteraction.getMessage().getMessage(), "New message text should match[cite: 1].");
     }
 
     @Test
-    void isAnInteractable() {
-        assertInstanceOf(Interactable.class, new DialogInteraction(msg("Hi")));
+    void testTriggerExecutionStub() {
+        // Ensures triggering the stub executes without error[cite: 7]
+        assertDoesNotThrow(() -> dialogInteraction.trigger(), "Triggering DialogInteraction should execute cleanly even if not fully implemented[cite: 7].");
     }
 
     @Test
-    void triggerDoesNotThrow() {
-        DialogInteraction interaction = new DialogInteraction(msg("Hi"));
+    void testNextTriggerChaining() {
+        // Verifies chaining dialog interactions together[cite: 3]
+        assertNull(dialogInteraction.getNextTrigger(), "Next trigger should initially be null[cite: 3].");
 
-        assertDoesNotThrow(interaction::trigger);
+        DialogInteraction nextDialog = new DialogInteraction(new MessageData("Next line of dialog."));
+        dialogInteraction.setNextTrigger(nextDialog);
+
+        assertNotNull(dialogInteraction.getNextTrigger(), "Next trigger should be set[cite: 3].");
+        assertEquals(nextDialog, dialogInteraction.getNextTrigger(), "The chained trigger should match[cite: 3].");
     }
 
     @Test
-    void triggerDoesNotPrintAnything() {
-        DialogInteraction interaction = new DialogInteraction(msg("Hi"));
+    void testQueueReplacementMessagesInheritance() {
+        // Tests queue-based replacement messages for future multi-line dialog sequencing[cite: 3]
+        Queue<MessageData> replacementQueue = new LinkedList<>();
+        MessageData lineTwo = new MessageData("Line two of dialogue.");
+        replacementQueue.add(lineTwo);
 
-        interaction.trigger();
+        // Subclass instantiation to inject queue since constructor takes only MessageData[cite: 3, 7]
+        DialogInteraction queuedDialog = new DialogInteraction(messageData) {
+            {
+                this.replacementMessages = replacementQueue;
+            }
+        };
 
-        assertEquals("", out.toString());
-    }
+        assertEquals(messageData, queuedDialog.getMessage(), "Initial message should match.");
 
-    @Test
-    void nextTriggerCanBeSet() {
-        DialogInteraction interaction = new DialogInteraction(msg("Hi"));
-        BasicInteraction next = new BasicInteraction(msg("Next"));
-
-        interaction.setNextTrigger(next);
-
-        assertSame(next, interaction.nextTrigger);
+        // Simulate advancing to the next queued message via lateTrigger[cite: 3]
+        queuedDialog.lateTrigger();
+        assertEquals(lineTwo, queuedDialog.getMessage(), "Message should advance to the next line in the queue[cite: 3].");
     }
 }

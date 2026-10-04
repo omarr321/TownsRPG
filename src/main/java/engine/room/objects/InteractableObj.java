@@ -49,7 +49,7 @@ public class InteractableObj extends BasicObj{
     }
 
     /**
-     * Gets the entry point for the interaction
+     * Gets the entry point for the interaction.
      * @return The Intreratable entry point.
      */
     public Interactable getEntryPoint() {

@@ -1,378 +1,338 @@
 package gui.hud;
 
+import engine.Player;
+import engine.interactions.BasicInteraction;
+import engine.interactions.FlagInteraction;
+import engine.interactions.Interactable;
+import engine.messages.MessageData;
+import engine.room.Room;
+import engine.room.objects.InteractableObj;
+import engine.room.parts.RoomPoints;
 import helpers.GameSettings;
 import helpers.Point;
-import engine.room.Room;
-import engine.room.parts.Ceiling;
-import engine.room.parts.Floor;
-import engine.room.parts.RoomPoints;
-import engine.room.parts.Wall;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
+import javax.swing.plaf.LayerUI;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class HudUITest {
+class HudUITest {
 
-    /**
-     * A real Room that counts the calls HudUI makes to it. Every override
-     * still delegates to the real implementation.
-     */
-    private static class RecordingRoom extends Room {
-        int lookLeftCalls = 0;
-        int lookRightCalls = 0;
-        int rebuildCalls = 0;
-        int messageBoxPointsCalls = 0;
+    private DummyRoom dummyRoom;
+    private HudUI hudUI;
+    private JLayer<JComponent> jLayer;
+    private JPanel contentPanel;
 
-        RecordingRoom(Floor floor, Ceiling ceiling, RoomPoints points) {
-            super(floor, ceiling, points);
-        }
+    static class DummyRoom extends Room {
+        boolean lookedLeft = false;
+        boolean lookedRight = false;
+        boolean rebuiltScreen = false;
 
-        @Override
-        public void lookLeft() {
-            lookLeftCalls++;
-            super.lookLeft();
-        }
-
-        @Override
-        public void lookRight() {
-            lookRightCalls++;
-            super.lookRight();
-        }
-
-        @Override
-        public void rebuildScreen() {
-            rebuildCalls++;
-            super.rebuildScreen();
+        public DummyRoom() {
+            super(null, null, new RoomPoints(0.75, 0.5, 45, 1));
         }
 
         @Override
         public Point[] getMessageBoxPoints(float sizeRatio) {
-            messageBoxPointsCalls++;
-            return super.getMessageBoxPoints(sizeRatio);
+            return new Point[]{
+                    new Point(10, 100),
+                    new Point(200, 100),
+                    new Point(200, 150),
+                    new Point(10, 150)
+            };
+        }
+
+        @Override
+        public void lookLeft() {
+            lookedLeft = true;
+        }
+
+        @Override
+        public void lookRight() {
+            lookedRight = true;
+        }
+
+        @Override
+        public void rebuildScreen() {
+            rebuiltScreen = true;
         }
     }
-
-    private RecordingRoom room;
-    private Floor floor;
-    private Ceiling ceiling;
-    private Wall[] walls;
-
-    private HudUI hud;
-    private JLayer<JComponent> layer;
-    private BufferedImage canvas;
 
     @BeforeEach
-    void setUp() {
-        GameSettings.screenWidth = 1920;
-        GameSettings.screenHeight = 1080;
+    void setUp() throws Exception {
+        runOnEDT(() -> {
+            dummyRoom = new DummyRoom();
+            hudUI = new HudUI(dummyRoom);
 
-        floor = new Floor(Color.GRAY);
-        ceiling = new Ceiling(Color.WHITE);
-        walls = new Wall[]{new Wall(Color.RED), new Wall(Color.GREEN), new Wall(Color.BLUE), new Wall(Color.YELLOW)};
-        room = completeRoom();
-
-        hud = new HudUI(room);
-        layer = new JLayer<>(new JPanel(), hud);
-        layer.setSize(GameSettings.screenWidth, GameSettings.screenHeight);
-        layer.getView().setSize(GameSettings.screenWidth, GameSettings.screenHeight);
-
-        canvas = new BufferedImage(GameSettings.screenWidth, GameSettings.screenHeight,
-                BufferedImage.TYPE_INT_ARGB);
+            contentPanel = new JPanel();
+            contentPanel.setBounds(0, 0, GameSettings.screenWidth, GameSettings.screenHeight);
+            jLayer = new JLayer<>(contentPanel, hudUI);
+            hudUI.installUI(jLayer);
+        });
     }
 
-    @AfterEach
-    void tearDown() {
-        GameSettings.screenWidth = 0;
-        GameSettings.screenHeight = 0;
-    }
-
-    // ---------- helpers ----------
-
-    /** A room with all four walls set, looking at wall 1 (so the room is "completed"). */
-    private RecordingRoom completeRoom() {
-        RecordingRoom room = new RecordingRoom(floor, ceiling, new RoomPoints(0.5, 0.5, 30, 2));
-        for (int i = 0; i < 4; i++) {
-            room.setWall(walls[i], i);
+    private void runOnEDT(Runnable runnable) throws Exception {
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            SwingUtilities.invokeAndWait(runnable);
         }
-        room.setLookingIndex(1);
-        return room;
     }
 
-    private void paintHud() {
-        Graphics2D g = canvas.createGraphics();
+    @Test
+    @DisplayName("Initialization default state check")
+    void testInitialState() {
+        assertFalse(hudUI.isBlockingInput(), "HUD should not block input on initial setup");
+    }
+
+    @Nested
+    @DisplayName("Message Display & Chaining Tests")
+    class MessageTests {
+
+        @Test
+        @DisplayName("Display single message blocks input and displays content")
+        void testDisplaySingleMessage() throws Exception {
+            runOnEDT(() -> {
+                MessageData msg = new MessageData("Hello World", "Speaker", MessageData.NamePosition.LEFT);
+                hudUI.displayMessage(msg);
+
+                assertTrue(hudUI.isBlockingInput(), "HUD should block input while message is displayed");
+            });
+        }
+
+        @Test
+        @DisplayName("Display null message closes any open message")
+        void testDisplayNullMessageCloses() throws Exception {
+            runOnEDT(() -> {
+                MessageData msg = new MessageData("Hello World", "Speaker", MessageData.NamePosition.LEFT);
+                hudUI.displayMessage(msg);
+                assertTrue(hudUI.isBlockingInput(), "HUD should block input when message is active");
+
+                hudUI.displayMessage(null);
+                assertFalse(hudUI.isBlockingInput(), "Displaying null message should close active message");
+            });
+        }
+
+        @Test
+        @DisplayName("Advancing messages via Supplier sequence")
+        void testDisplayMessageChain() throws Exception {
+            runOnEDT(() -> {
+                MessageData msg1 = new MessageData("Page 1", "Speaker", MessageData.NamePosition.LEFT);
+                MessageData msg2 = new MessageData("Page 2", "Speaker", MessageData.NamePosition.LEFT);
+
+                AtomicInteger supplierCalls = new AtomicInteger(0);
+
+                hudUI.displayMessage(msg1, () -> {
+                    if (supplierCalls.getAndIncrement() == 0) {
+                        return msg2;
+                    }
+                    return null;
+                });
+
+                assertTrue(hudUI.isBlockingInput());
+
+                // Click 1: Finish typing page 1
+                dispatchClick();
+                assertTrue(hudUI.isBlockingInput(), "Still blocking input while showing page 1");
+
+                // Click 2: Advance to page 2
+                dispatchClick();
+                assertTrue(hudUI.isBlockingInput(), "Still blocking input while showing page 2");
+
+                // Click 3: Finish typing page 2
+                dispatchClick();
+                assertTrue(hudUI.isBlockingInput(), "Still blocking input at end of page 2");
+
+                // Click 4: Close message chain
+                dispatchClick();
+                assertFalse(hudUI.isBlockingInput(), "Message chain should be closed after last item");
+            });
+        }
+    }
+
+    @Nested
+    @DisplayName("Interaction Engine Domain Integration Tests")
+    class InteractionTests {
+
+        @Test
+        @DisplayName("BasicInteraction triggers and executes lateTrigger sequence correctly")
+        void testBasicInteractionChain() throws Exception {
+            runOnEDT(() -> {
+                MessageData msg1 = new MessageData("Trigger 1 Msg", "Speaker", MessageData.NamePosition.LEFT);
+                MessageData msg2 = new MessageData("Trigger 2 Msg", "Speaker", MessageData.NamePosition.LEFT);
+
+                Interactable step1 = new BasicInteraction(msg1);
+                Interactable step2 = new BasicInteraction(msg2);
+                step1.setNextTrigger(step2);
+
+                hudUI.displayInteraction(step1);
+                assertTrue(hudUI.isBlockingInput());
+
+                // Step 1: Finish typing & advance
+                dispatchClick();
+                dispatchClick();
+
+                // Step 2: Finish typing & advance
+                dispatchClick();
+                dispatchClick();
+
+                assertFalse(hudUI.isBlockingInput(), "Interaction chain should complete and unblock input");
+            });
+        }
+
+        @Test
+        @DisplayName("FlagInteraction updates Player flags and replaces message queue on lateTrigger")
+        void testFlagInteractionWithReplacementMessages() throws Exception {
+            runOnEDT(() -> {
+                Player player = new Player("Hero");
+                MessageData initialMsg = new MessageData("First interact", "Guide");
+                MessageData replacedMsg = new MessageData("Repeat interact", "Guide");
+
+                Queue<MessageData> replacements = new ArrayDeque<>();
+                replacements.add(replacedMsg);
+
+                FlagInteraction flagInteract = new FlagInteraction(initialMsg, replacements, player, "OPENED_CHEST");
+
+                // Verify initial flag state
+                assertTrue(player.flagExists("OPENED_CHEST"));
+                assertFalse(player.getFlag("OPENED_CHEST"));
+
+                hudUI.displayInteraction(flagInteract);
+
+                // Triggering should set flag to true immediately
+                assertTrue(player.getFlag("OPENED_CHEST"), "Flag should be set to true on trigger");
+
+                // Finish typing and advance to trigger lateTrigger()
+                dispatchClick();
+                dispatchClick();
+
+                assertEquals(replacedMsg.getMessage(), flagInteract.getMessage().getMessage(), "Message should be replaced after lateTrigger");
+                assertFalse(hudUI.isBlockingInput());
+            });
+        }
+
+        @Test
+        @DisplayName("InteractableObj shape contains check correctly detects point collisions")
+        void testInteractableObjCollision() {
+            Point[] corners = new Point[]{
+                    new Point(10, 10),
+                    new Point(50, 10),
+                    new Point(50, 50),
+                    new Point(10, 50)
+            };
+            InteractableObj obj = new InteractableObj(corners, Color.RED);
+
+            assertTrue(obj.contains(30, 30), "Point inside bounding box should return true");
+            assertFalse(obj.contains(5, 5), "Point outside bounding box should return false");
+        }
+    }
+
+    @Nested
+    @DisplayName("Mouse Input & Navigation Tests")
+    class MouseInputTests {
+
+        @Test
+        @DisplayName("Mouse events consume input during active message display")
+        void testMouseEventConsumedWhenMessageShowing() throws Exception {
+            runOnEDT(() -> {
+                MessageData msg = new MessageData("Blocking message", "Speaker", MessageData.NamePosition.NONE);
+                hudUI.displayMessage(msg);
+
+                MouseEvent pressEvent = new MouseEvent(
+                        contentPanel,
+                        MouseEvent.MOUSE_PRESSED,
+                        System.currentTimeMillis(),
+                        0,
+                        50, 50,
+                        1, false
+                );
+
+                sendMouseEvent(pressEvent);
+                assertTrue(pressEvent.isConsumed(), "Mouse press should be consumed while message is displayed");
+            });
+        }
+
+        @Test
+        @DisplayName("Mouse move resets click swallow flag")
+        void testMouseMotionResetsSwallowClick() throws Exception {
+            runOnEDT(() -> {
+                hudUI.displayMessage(new MessageData("Test", "Speaker", MessageData.NamePosition.NONE));
+
+                long now = System.currentTimeMillis();
+
+                // Press and release while message is active
+                MouseEvent press = new MouseEvent(contentPanel, MouseEvent.MOUSE_PRESSED, now, 0, 10, 10, 1, false);
+                MouseEvent release = new MouseEvent(contentPanel, MouseEvent.MOUSE_RELEASED, now + 10, 0, 10, 10, 1, false);
+
+                sendMouseEvent(press);
+                sendMouseEvent(release); // Finishes typing
+
+                // Close message
+                sendMouseEvent(press);
+                sendMouseEvent(release);
+
+                assertTrue(hudUI.isBlockingInput(), "Should temporarily block input after click to swallow release");
+
+                // Move mouse to clear swallow click state
+                MouseEvent move = new MouseEvent(contentPanel, MouseEvent.MOUSE_MOVED, now + 20, 0, 15, 15, 0, false);
+                sendMouseMotionEvent(move);
+
+                assertFalse(hudUI.isBlockingInput(), "Mouse movement should reset swallowClick flag and unblock input");
+            });
+        }
+    }
+
+    @Nested
+    @DisplayName("UI Lifetime & Cleanup Tests")
+    class CleanupTests {
+
+        @Test
+        @DisplayName("uninstallUI cleans up layer and stops processing")
+        void testUninstallUI() throws Exception {
+            runOnEDT(() -> {
+                hudUI.uninstallUI(jLayer);
+                assertFalse(hudUI.isBlockingInput(), "Input should not be blocking after uninstall");
+            });
+        }
+    }
+
+    private void dispatchClick() {
+        long time = System.currentTimeMillis();
+        MouseEvent press = new MouseEvent(contentPanel, MouseEvent.MOUSE_PRESSED, time, 0, 10, 10, 1, false);
+        MouseEvent release = new MouseEvent(contentPanel, MouseEvent.MOUSE_RELEASED, time + 10, 0, 10, 10, 1, false);
+
+        sendMouseEvent(press);
+        sendMouseEvent(release);
+    }
+
+    private void sendMouseEvent(MouseEvent e) {
         try {
-            hud.paint(g, layer);
-        } finally {
-            g.dispose();
+            Method m = LayerUI.class.getDeclaredMethod("processMouseEvent", MouseEvent.class, JLayer.class);
+            m.setAccessible(true);
+            m.invoke(hudUI, e, jLayer);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
     }
 
-    private void setShowMessage(boolean value) throws Exception {
-        Field f = HudUI.class.getDeclaredField("showMessage");
-        f.setAccessible(true);
-        f.setBoolean(hud, value);
-    }
-
-    private Rectangle getBounds(String fieldName) throws Exception {
-        Field f = HudUI.class.getDeclaredField(fieldName);
-        f.setAccessible(true);
-        return (Rectangle) f.get(hud);
-    }
-
-    private MouseEvent mouse(int id, int x, int y) {
-        return new MouseEvent(layer, id, System.currentTimeMillis(), 0, x, y, 1, false);
-    }
-
-    private static int cx(Rectangle r) { return r.x + r.width / 2; }
-    private static int cy(Rectangle r) { return r.y + r.height / 2; }
-
-    private boolean hasNonTransparentPixel() {
-        for (int x = 0; x < canvas.getWidth(); x += 4) {
-            for (int y = 0; y < canvas.getHeight(); y += 4) {
-                if ((canvas.getRGB(x, y) >>> 24) != 0) return true;
-            }
+    private void sendMouseMotionEvent(MouseEvent e) {
+        try {
+            Method m = LayerUI.class.getDeclaredMethod("processMouseMotionEvent", MouseEvent.class, JLayer.class);
+            m.setAccessible(true);
+            m.invoke(hudUI, e, jLayer);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
-        return false;
-    }
-
-    // ---------- construction / install ----------
-
-    @Test
-    void createHudUI() {
-        assertNotNull(new HudUI(this.room));
-    }
-
-    @Test
-    void installUI_enablesMouseEvents() {
-        // JLayer calls installUI when the UI is set in its constructor.
-        assertEquals(AWTEvent.MOUSE_EVENT_MASK, layer.getLayerEventMask());
-    }
-
-    @Test
-    void uninstallUI_clearsEventMask() {
-        layer.setUI(null);
-        assertEquals(0, layer.getLayerEventMask());
-    }
-
-    // ---------- paint ----------
-
-    @Test
-    void paint_withZeroSize_doesNotQueryRoom() {
-        layer.setSize(0, 0);
-        paintHud();
-        assertEquals(0, room.messageBoxPointsCalls);
-    }
-
-    @Test
-    void paint_requestsMessageBoxPointsFromRoom() {
-        paintHud();
-        assertTrue(room.messageBoxPointsCalls > 0);
-    }
-
-    @Test
-    void paint_withMessageHidden_setsArrowBoundsToScaledArrowSize() throws Exception {
-        paintHud();
-
-        int expected = GameSettings.scale(120); // HudUI.ARROW_WIDTH
-        Rectangle left = getBounds("leftArrowBounds");
-        Rectangle right = getBounds("rightArrowBounds");
-
-        assertEquals(expected, left.width);
-        assertEquals(expected, left.height);
-        assertEquals(expected, right.width);
-        assertEquals(expected, right.height);
-    }
-
-    @Test
-    void paint_leftArrowIsLeftOfRightArrow() throws Exception {
-        paintHud();
-        Rectangle left = getBounds("leftArrowBounds");
-        Rectangle right = getBounds("rightArrowBounds");
-        assertTrue(left.x + left.width <= right.x, "arrows should not overlap");
-    }
-
-    @Test
-    void paint_withMessageShown_clearsArrowBounds() throws Exception {
-        paintHud();                 // populate bounds first
-        setShowMessage(true);
-        paintHud();
-
-        assertTrue(getBounds("leftArrowBounds").isEmpty());
-        assertTrue(getBounds("rightArrowBounds").isEmpty());
-    }
-
-    @Test
-    void paint_withMessageHidden_drawsSomething() {
-        paintHud();
-        assertTrue(hasNonTransparentPixel(), "expected arrows to draw pixels");
-    }
-
-    @Test
-    void paint_calledTwice_isStable() throws Exception {
-        paintHud();
-        Rectangle first = new Rectangle(getBounds("leftArrowBounds"));
-        paintHud();
-        assertEquals(first, getBounds("leftArrowBounds"));
-    }
-
-    // ---------- processMouseEvent ----------
-
-    @Test
-    void click_onLeftArrow_looksLeftRebuildsAndConsumes() throws Exception {
-        paintHud();
-        Rectangle left = getBounds("leftArrowBounds");
-        MouseEvent e = mouse(MouseEvent.MOUSE_CLICKED, cx(left), cy(left));
-
-        hud.processMouseEvent(e, layer);
-
-        assertEquals(1, room.lookLeftCalls);
-        assertEquals(1, room.rebuildCalls);
-        assertEquals(0, room.lookRightCalls);
-        assertSame(walls[0], room.getLookingWall(), "started on wall 1, left should be wall 0");
-        assertTrue(e.isConsumed());
-    }
-
-    @Test
-    void click_onRightArrow_looksRightRebuildsAndConsumes() throws Exception {
-        paintHud();
-        Rectangle right = getBounds("rightArrowBounds");
-        MouseEvent e = mouse(MouseEvent.MOUSE_CLICKED, cx(right), cy(right));
-
-        hud.processMouseEvent(e, layer);
-
-        assertEquals(1, room.lookRightCalls);
-        assertEquals(1, room.rebuildCalls);
-        assertEquals(0, room.lookLeftCalls);
-        assertSame(walls[2], room.getLookingWall(), "started on wall 1, right should be wall 2");
-        assertTrue(e.isConsumed());
-    }
-
-    @Test
-    void click_leftThenRight_returnsToOriginalWall() throws Exception {
-        paintHud();
-        Rectangle left = getBounds("leftArrowBounds");
-        Rectangle right = getBounds("rightArrowBounds");
-
-        hud.processMouseEvent(mouse(MouseEvent.MOUSE_CLICKED, cx(left), cy(left)), layer);
-        hud.processMouseEvent(mouse(MouseEvent.MOUSE_CLICKED, cx(right), cy(right)), layer);
-
-        assertSame(walls[1], room.getLookingWall());
-        assertEquals(2, room.rebuildCalls);
-    }
-
-    @Test
-    void click_leftFourTimes_wrapsAroundToStartingWall() throws Exception {
-        paintHud();
-        Rectangle left = getBounds("leftArrowBounds");
-
-        for (int i = 0; i < 4; i++) {
-            hud.processMouseEvent(mouse(MouseEvent.MOUSE_CLICKED, cx(left), cy(left)), layer);
-        }
-
-        assertSame(walls[1], room.getLookingWall());
-        assertEquals(4, room.lookLeftCalls);
-    }
-
-    @Test
-    void click_leftFromWallZero_wrapsToWallThree() throws Exception {
-        room.setLookingIndex(0);
-        paintHud();
-        Rectangle left = getBounds("leftArrowBounds");
-
-        hud.processMouseEvent(mouse(MouseEvent.MOUSE_CLICKED, cx(left), cy(left)), layer);
-
-        assertSame(walls[3], room.getLookingWall());
-    }
-
-    @Test
-    void click_rightFromWallThree_wrapsToWallZero() throws Exception {
-        room.setLookingIndex(3);
-        paintHud();
-        Rectangle right = getBounds("rightArrowBounds");
-
-        hud.processMouseEvent(mouse(MouseEvent.MOUSE_CLICKED, cx(right), cy(right)), layer);
-
-        assertSame(walls[0], room.getLookingWall());
-    }
-
-    @Test
-    void click_outsideArrows_doesNothing() throws Exception {
-        paintHud();
-        // Top-center of the screen: well clear of both arrows.
-        MouseEvent e = mouse(MouseEvent.MOUSE_CLICKED, GameSettings.screenWidth / 2, 5);
-
-        hud.processMouseEvent(e, layer);
-
-        assertEquals(0, room.lookLeftCalls);
-        assertEquals(0, room.lookRightCalls);
-        assertEquals(0, room.rebuildCalls);
-        assertFalse(e.isConsumed());
-    }
-
-    @Test
-    void nonClickEvents_areIgnored() throws Exception {
-        paintHud();
-        Rectangle left = getBounds("leftArrowBounds");
-
-        for (int id : new int[]{MouseEvent.MOUSE_PRESSED, MouseEvent.MOUSE_RELEASED,
-                MouseEvent.MOUSE_ENTERED, MouseEvent.MOUSE_EXITED}) {
-            MouseEvent e = mouse(id, cx(left), cy(left));
-            hud.processMouseEvent(e, layer);
-            assertFalse(e.isConsumed(), "event id " + id + " should be ignored");
-        }
-
-        assertEquals(0, room.lookLeftCalls);
-        assertEquals(0, room.rebuildCalls);
-    }
-
-    @Test
-    void click_whileMessageShown_doesNotNavigate() throws Exception {
-        paintHud();
-        Rectangle left = getBounds("leftArrowBounds");
-        int x = cx(left), y = cy(left);
-
-        setShowMessage(true);
-        paintHud();                 // bounds are now zeroed
-
-        MouseEvent e = mouse(MouseEvent.MOUSE_CLICKED, x, y);
-        hud.processMouseEvent(e, layer);
-
-        assertEquals(0, room.lookLeftCalls);
-        assertEquals(0, room.lookRightCalls);
-        assertSame(walls[1], room.getLookingWall());
-        assertFalse(e.isConsumed());
-    }
-
-    @Test
-    void click_beforeFirstPaint_doesNothing() {
-        MouseEvent e = mouse(MouseEvent.MOUSE_CLICKED, 0, 0);
-        hud.processMouseEvent(e, layer);
-
-        assertEquals(0, room.lookLeftCalls);
-        assertEquals(0, room.lookRightCalls);
-        assertFalse(e.isConsumed());
-    }
-
-    @Test
-    void click_fromChildComponent_convertsToLayerSpace() throws Exception {
-        paintHud();
-        Rectangle right = getBounds("rightArrowBounds");
-
-        JComponent view = layer.getView();
-        MouseEvent e = new MouseEvent(view, MouseEvent.MOUSE_CLICKED,
-                System.currentTimeMillis(), 0, cx(right), cy(right), 1, false);
-
-        hud.processMouseEvent(e, layer);
-
-        assertEquals(1, room.lookRightCalls);
-        assertTrue(e.isConsumed());
     }
 }

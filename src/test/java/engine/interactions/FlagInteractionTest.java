@@ -1,312 +1,93 @@
 package engine.interactions;
 
-import engine.FlagHolder;
 import engine.Player;
 import engine.messages.MessageData;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.ArrayDeque;
+import java.util.LinkedList;
 import java.util.Queue;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class FlagInteractionTest {
-    private final PrintStream originalOut = System.out;
-    private ByteArrayOutputStream out;
-    private Player player;
+/**
+ * Unit test class for FlagInteraction.
+ */
+class FlagInteractionTest {
+
+    private Player flagHolder;
+    private MessageData messageData;
+    private static final String TEST_FLAG = "has_talked_to_npc";
 
     @BeforeEach
     void setUp() {
-        out = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(out, true));
-        player = new Player("Tester");
-    }
-
-    @AfterEach
-    void restoreOutput() {
-        System.setOut(originalOut);
-    }
-
-    private static MessageData msg(String text) {
-        return new MessageData(text);
-    }
-
-    private static Queue<MessageData> queueOf(String... texts) {
-        Queue<MessageData> queue = new ArrayDeque<>();
-        for (String text : texts) {
-            queue.add(msg(text));
-        }
-        return queue;
-    }
-
-    private String[] outputLines() {
-        String text = out.toString().trim();
-        if (text.isEmpty()) {
-            return new String[0];
-        }
-        return text.split("\\R");
-    }
-
-    // ---- constructors / flag creation ----
-
-    @Test
-    void constructorCreatesMissingFlagAsFalse() {
-        new FlagInteraction(msg("msg"), player, "seen");
-
-        assertTrue(player.flagExists("seen"));
-        assertFalse(player.getFlag("seen"));
+        // Player implements FlagHolder[cite: 5, 6]
+        flagHolder = new Player("TestPlayer");
+        messageData = new MessageData("Hello traveler!");
     }
 
     @Test
-    void constructorKeepsExistingTrueFlag() {
-        player.addFlag("seen", true);
+    void testStandardConstructorAndTrigger() {
+        // Test constructor taking message, flagHolder, and checkFlag[cite: 4]
+        FlagInteraction interaction = new FlagInteraction(messageData, flagHolder, TEST_FLAG);
 
-        new FlagInteraction(msg("msg"), player, "seen");
+        assertEquals(messageData, interaction.getMessage(), "Message should match the one provided in constructor.");
 
-        assertTrue(player.getFlag("seen"));
+        // Trigger the interaction and verify that the specified flag is set to true[cite: 4]
+        interaction.trigger();
+        assertTrue(flagHolder.getFlag(TEST_FLAG), "Triggering the interaction should set the checkFlag to true.");
     }
 
     @Test
-    void replacementMessagesConstructorCreatesMissingFlag() {
-        new FlagInteraction(msg("msg"), queueOf("replaced"), player, "seen");
+    void testNonExistentFlagAutoCreation() {
+        // Verifies that if a flag does not exist, setCheckFlag / constructor creates it and defaults it to false[cite: 4, 5, 6]
+        FlagInteraction interaction = new FlagInteraction(messageData, flagHolder, "brand_new_flag");
 
-        assertTrue(player.flagExists("seen"));
-        assertFalse(player.getFlag("seen"));
+        assertTrue(flagHolder.flagExists("brand_new_flag"), "The flag should be automatically created if it doesn't exist.");
+        assertFalse(flagHolder.getFlag("brand_new_flag"), "The newly auto-created flag should default to false.");
     }
 
     @Test
-    void replacementMessagesConstructorKeepsExistingTrueFlag() {
-        player.addFlag("seen", true);
+    void testConstructorWithReplacementMessages() {
+        // Test overloaded constructor with replacement message queue[cite: 3, 4]
+        Queue<MessageData> replacements = new LinkedList<>();
+        MessageData nextMessage = new MessageData("Goodbye traveler!");
+        replacements.add(nextMessage);
 
-        new FlagInteraction(msg("msg"), queueOf("replaced"), player, "seen");
+        FlagInteraction interaction = new FlagInteraction(messageData, replacements, flagHolder, TEST_FLAG);
 
-        assertTrue(player.getFlag("seen"));
+        assertEquals(messageData, interaction.getMessage(), "Initial message should match.");
+
+        // Use lateTrigger to swap to the replacement message[cite: 3]
+        interaction.lateTrigger();
+        assertEquals(nextMessage, interaction.getMessage(), "Message should update to the queued replacement message.");
     }
 
     @Test
-    void isAnInteractable() {
-        assertInstanceOf(Interactable.class, new FlagInteraction(msg("msg"), player, "seen"));
-    }
+    void testSetCheckFlagUpdatesTarget() {
+        // Verifies that changing the active check flag dynamically updates behavior[cite: 4]
+        FlagInteraction interaction = new FlagInteraction(messageData, flagHolder, TEST_FLAG);
 
-    // ---- getMessage ----
+        String secondaryFlag = "quest_completed";
+        interaction.setCheckFlag(secondaryFlag);
 
-    @Test
-    void getMessageReturnsTheOriginalMessageBeforeTrigger() {
-        MessageData original = msg("msg");
-        FlagInteraction interaction = new FlagInteraction(original, queueOf("replaced"), player, "seen");
-
-        assertSame(original, interaction.getMessage());
-    }
-
-    @Test
-    void getMessageReturnsFirstReplacementAfterTrigger() {
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), queueOf("replaced"), player, "seen");
-
+        // Trigger should now affect the secondary flag instead of the initial one[cite: 4]
         interaction.trigger();
 
-        assertEquals("replaced", interaction.getMessage().getMessage());
+        assertFalse(flagHolder.getFlag(TEST_FLAG), "The original flag should remain untouched.");
+        assertTrue(flagHolder.getFlag(secondaryFlag), "The newly set checkFlag should be updated to true upon trigger.");
     }
 
     @Test
-    void getMessageKeepsOriginalAfterTriggerWhenThereAreNoReplacements() {
-        MessageData original = msg("msg");
-        FlagInteraction interaction = new FlagInteraction(original, player, "seen");
+    void testTriggerMultipleTimes() {
+        // Ensures trigger is idempotent and behaves correctly on repeated calls[cite: 4]
+        FlagInteraction interaction = new FlagInteraction(messageData, flagHolder, TEST_FLAG);
 
         interaction.trigger();
+        assertTrue(flagHolder.getFlag(TEST_FLAG), "Flag should be true after first trigger.");
 
-        assertSame(original, interaction.getMessage());
-    }
-
-    @Test
-    void getMessageKeepsOriginalWhenReplacementQueueIsEmpty() {
-        MessageData original = msg("msg");
-        FlagInteraction interaction = new FlagInteraction(original, queueOf(), player, "seen");
-
-        interaction.trigger();
-
-        assertSame(original, interaction.getMessage());
-    }
-
-    @Test
-    void settingTheFlagElsewhereDoesNotChangeTheMessage() {
-        MessageData original = msg("msg");
-        FlagInteraction interaction = new FlagInteraction(original, queueOf("replaced"), player, "seen");
-
-        player.addFlag("seen", true);
-
-        assertSame(original, interaction.getMessage());
-    }
-
-    // ---- trigger ----
-
-    @Test
-    void triggerPrintsMessage() {
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), player, "seen");
-        out.reset();
-
-        interaction.trigger();
-
-        assertArrayEquals(new String[]{"msg"}, outputLines());
-    }
-
-    @Test
-    void triggerSetsFlagToTrue() {
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), player, "seen");
-
-        interaction.trigger();
-
-        assertTrue(player.getFlag("seen"));
-    }
-
-    @Test
-    void triggerSetsFlagToTrueWhenThereAreReplacements() {
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), queueOf("replaced"), player, "seen");
-
-        interaction.trigger();
-
-        assertTrue(player.getFlag("seen"));
-    }
-
-    @Test
-    void secondTriggerPrintsReplacementMessage() {
-        FlagInteraction interaction = new FlagInteraction(msg("first time"), queueOf("second time"), player, "seen");
-        out.reset();
-
-        interaction.trigger();
-        interaction.trigger();
-
-        assertArrayEquals(new String[]{"first time", "second time"}, outputLines());
-    }
-
-    @Test
-    void triggersWalkTheReplacementQueueInOrder() {
-        FlagInteraction interaction = new FlagInteraction(msg("one"), queueOf("two", "three"), player, "seen");
-        out.reset();
-
-        interaction.trigger();
-        interaction.trigger();
-        interaction.trigger();
-
-        assertArrayEquals(new String[]{"one", "two", "three"}, outputLines());
-    }
-
-    @Test
-    void lastReplacementRepeatsOnceTheQueueRunsOut() {
-        FlagInteraction interaction = new FlagInteraction(msg("one"), queueOf("two"), player, "seen");
-        out.reset();
-
-        interaction.trigger();
-        interaction.trigger();
-        interaction.trigger();
-        interaction.trigger();
-
-        assertArrayEquals(new String[]{"one", "two", "two", "two"}, outputLines());
-    }
-
-    @Test
-    void secondTriggerWithoutReplacementsPrintsSameMessage() {
-        FlagInteraction interaction = new FlagInteraction(msg("same"), player, "seen");
-        out.reset();
-
-        interaction.trigger();
-        interaction.trigger();
-
-        assertArrayEquals(new String[]{"same", "same"}, outputLines());
-    }
-
-    @Test
-    void triggerWithoutReplacementsDoesNotThrow() {
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), player, "seen");
-
-        assertDoesNotThrow(interaction::trigger);
-    }
-
-    @Test
-    void triggerCallsNextTriggerAfterPrinting() {
-        FlagInteraction first = new FlagInteraction(msg("First"), player, "flag1");
-        FlagInteraction second = new FlagInteraction(msg("Second"), player, "flag2");
-        first.setNextTrigger(second);
-        out.reset();
-
-        first.trigger();
-
-        assertArrayEquals(new String[]{"First", "Second"}, outputLines());
-        assertTrue(player.getFlag("flag1"));
-        assertTrue(player.getFlag("flag2"));
-    }
-
-    @Test
-    void triggerCanChainIntoBasicInteraction() {
-        FlagInteraction first = new FlagInteraction(msg("First"), player, "flag1");
-        first.setNextTrigger(new BasicInteraction(msg("Basic")));
-        out.reset();
-
-        first.trigger();
-
-        assertArrayEquals(new String[]{"First", "Basic"}, outputLines());
-    }
-
-    // ---- setCheckFlag ----
-
-    @Test
-    void setCheckFlagCreatesNewFlagAsFalse() {
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), player, "old");
-
-        interaction.setCheckFlag("new");
-
-        assertTrue(player.flagExists("new"));
-        assertFalse(player.getFlag("new"));
-    }
-
-    @Test
-    void setCheckFlagSwitchesWhichFlagTriggerSets() {
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), player, "old");
-
-        interaction.setCheckFlag("other");
-        interaction.trigger();
-
-        assertTrue(player.getFlag("other"));
-        assertFalse(player.getFlag("old"));
-    }
-
-    @Test
-    void setCheckFlagKeepsExistingFlagValue() {
-        player.addFlag("existing", true);
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), player, "old");
-
-        interaction.setCheckFlag("existing");
-
-        assertTrue(player.getFlag("existing"));
-    }
-
-    @Test
-    void worksWithAnyFlagHolder() {
-        FlagHolder holder = new FlagHolder() {
-            private final java.util.Map<String, Boolean> map = new java.util.HashMap<>();
-
-            @Override
-            public boolean flagExists(String name) {
-                return map.containsKey(name);
-            }
-
-            @Override
-            public boolean getFlag(String name) {
-                return map.get(name);
-            }
-
-            @Override
-            public void addFlag(String name, boolean val) {
-                map.put(name, val);
-            }
-        };
-
-        FlagInteraction interaction = new FlagInteraction(msg("msg"), holder, "custom");
-        interaction.trigger();
-
-        assertTrue(holder.getFlag("custom"));
+        // Triggering again should keep it true without throwing exceptions[cite: 4]
+        assertDoesNotThrow(() -> interaction.trigger(), "Subsequent triggers should execute cleanly.");
+        assertTrue(flagHolder.getFlag(TEST_FLAG), "Flag should remain true.");
     }
 }

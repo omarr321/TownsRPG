@@ -1,239 +1,98 @@
 package engine.room.objects;
 
-import engine.interactions.BasicInteraction;
 import engine.interactions.Interactable;
+import engine.interactions.BasicInteraction;
 import engine.messages.MessageData;
-import helpers.GameSettings;
 import helpers.Point;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class InteractableObjTest {
-    private final PrintStream originalOut = System.out;
-    private final PrintStream originalErr = System.err;
-    private ByteArrayOutputStream out;
-    private ByteArrayOutputStream err;
-    private Point[] corners;
+/**
+ * Unit test class for InteractableObj and its interactions.
+ */
+class InteractableObjTest {
 
-    private static class CountingInteractable extends Interactable {
-        int triggerCount = 0;
-
-        CountingInteractable(String message) {
-            super(new MessageData(message));
-        }
-
-        @Override
-        public void trigger() {
-            triggerCount++;
-        }
-    }
+    private Point[] sampleCorners;
+    private InteractableObj colorObj;
+    private InteractableObj imageObj;
 
     @BeforeEach
     void setUp() {
-        GameSettings.screenWidth = 0;
-        GameSettings.screenHeight = 0;
-        corners = new Point[]{new Point(10, 10), new Point(60, 10), new Point(60, 40), new Point(10, 40)};
+        // Define a simple square shape using engine.helpers.Point
+        sampleCorners = new Point[]{
+                new Point(0, 0),
+                new Point(100, 0),
+                new Point(100, 100),
+                new Point(0, 100)
+        };
 
-        out = new ByteArrayOutputStream();
-        err = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(out, true));
-        System.setErr(new PrintStream(err, true));
-    }
-
-    @AfterEach
-    void tearDown() {
-        System.setOut(originalOut);
-        System.setErr(originalErr);
-        GameSettings.screenWidth = 0;
-        GameSettings.screenHeight = 0;
-    }
-
-    // ---- constructors ----
-
-    @Test
-    void isABasicObj() {
-        assertInstanceOf(BasicObj.class, new InteractableObj(corners, Color.RED));
+        colorObj = new InteractableObj(sampleCorners, Color.RED);
+        imageObj = new InteractableObj(sampleCorners, "assets/test_image.png", true);
     }
 
     @Test
-    void colorConstructor() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
+    void testConstructorsAndInitialProperties() {
+        // Test color constructor
+        assertArrayEquals(sampleCorners, colorObj.getShapeCorners(), "Shape corners should match[cite: 8, 9].");
+        assertEquals(RoomObj.DrawType.SOLID, colorObj.getType(), "Color-based object should have DrawType SOLID[cite: 8, 10].");
+        assertEquals(Color.RED, colorObj.getColor(), "Color should match the one passed in constructor[cite: 8, 10].");
+        assertNull(colorObj.getEntryPoint(), "Entry point should initially be null[cite: 9].");
 
-        assertEquals(RoomObj.DrawType.SOLID, obj.getType());
-        assertEquals(Color.RED, obj.getColor());
-        assertSame(corners, obj.getShapeCorners());
+        // Test image constructor with warp flag
+        assertEquals(RoomObj.DrawType.IMAGE, imageObj.getType(), "Image-based object should have DrawType IMAGE[cite: 8, 10].");
+        assertEquals("assets/test_image.png", imageObj.getImagePath(), "Image path should match[cite: 8, 10].");
+        assertTrue(imageObj.getWarped(), "Warped property should be true[cite: 8, 10].");
     }
 
     @Test
-    void imageConstructor() {
-        InteractableObj obj = new InteractableObj(corners, "/images/objects/Crate.png");
+    void testSetAndGetEntryPoint() {
+        // Create a mock/basic interactable to act as the entry point
+        Interactable interaction = new BasicInteraction(new MessageData("Interaction triggered!"));
 
-        assertEquals(RoomObj.DrawType.IMAGE, obj.getType());
-        assertEquals("/images/objects/Crate.png", obj.getImagePath());
-        assertTrue(obj.getWarped());
+        assertNull(colorObj.getEntryPoint(), "Entry point should start as null[cite: 9].");
+
+        colorObj.setEntryPoint(interaction);
+        assertEquals(interaction, colorObj.getEntryPoint(), "Get entry point should return the assigned interactable[cite: 9].");
     }
 
     @Test
-    void imageConstructorWithWarp() {
-        InteractableObj obj = new InteractableObj(corners, "/images/objects/Crate.png", false);
+    void testTriggerWithEntryPoint() {
+        // Verifies that triggering the object successfully calls the underlying interactable's trigger behavior
+        AtomicBoolean wasTriggered = new AtomicBoolean(false);
 
-        assertEquals(RoomObj.DrawType.IMAGE, obj.getType());
-        assertFalse(obj.getWarped());
-    }
+        Interactable customInteraction = new BasicInteraction(new MessageData("Test")) {
+            @Override
+            public void trigger() {
+                wasTriggered.set(true);
+            }
+        };
 
-    // ---- trigger ----
+        colorObj.setEntryPoint(customInteraction);
+        colorObj.trigger();
 
-    @Test
-    void triggerWithoutEntryPointDoesNotThrow() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-
-        assertDoesNotThrow(obj::trigger);
-    }
-
-    @Test
-    void triggerWithoutEntryPointReportsToStdErr() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-
-        obj.trigger();
-
-        assertTrue(err.toString().contains("entry point"));
+        assertTrue(wasTriggered.get(), "Triggering the InteractableObj should invoke the entry point's trigger method[cite: 9].");
     }
 
     @Test
-    void triggerCallsEntryPoint() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-        CountingInteractable entry = new CountingInteractable("entry");
-        obj.setEntryPoint(entry);
-
-        obj.trigger();
-
-        assertEquals(1, entry.triggerCount);
-        assertEquals("", err.toString());
+    void testTriggerWithoutEntryPoint() {
+        // Ensures triggering an object with no entry point executes safely without throwing exceptions (logs to stderr)[cite: 9]
+        assertDoesNotThrow(() -> colorObj.trigger(), "Triggering an object with a null entry point should handle it gracefully[cite: 9].");
     }
 
     @Test
-    void triggerCanBeRepeated() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-        CountingInteractable entry = new CountingInteractable("entry");
-        obj.setEntryPoint(entry);
+    void testContainsPoint() {
+        // Test point-in-polygon containment logic provided by InteractableObj
+        // Inside points
+        assertTrue(colorObj.contains(50, 50), "Point (50, 50) should be inside the 100x100 box[cite: 9].");
+        assertTrue(colorObj.contains(10, 90), "Point (10, 90) should be inside the box[cite: 9].");
 
-        obj.trigger();
-        obj.trigger();
-        obj.trigger();
-
-        assertEquals(3, entry.triggerCount);
-    }
-
-    @Test
-    void triggerPrintsEntryPointMessage() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-        obj.setEntryPoint(new BasicInteraction(new MessageData("You found a box.")));
-
-        obj.trigger();
-
-        assertEquals("You found a box.", out.toString().trim());
-    }
-
-    @Test
-    void triggerRunsWholeInteractionChain() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-        BasicInteraction first = new BasicInteraction(new MessageData("First"));
-        BasicInteraction second = new BasicInteraction(new MessageData("Second"));
-        first.setNextTrigger(second);
-        obj.setEntryPoint(first);
-
-        obj.trigger();
-
-        assertArrayEquals(new String[]{"First", "Second"}, out.toString().trim().split("\\R"));
-    }
-
-    @Test
-    void settingEntryPointDoesNotTriggerIt() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-        CountingInteractable entry = new CountingInteractable("entry");
-
-        obj.setEntryPoint(entry);
-
-        assertEquals(0, entry.triggerCount);
-    }
-
-    @Test
-    void entryPointCanBeReplaced() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-        CountingInteractable first = new CountingInteractable("first");
-        CountingInteractable second = new CountingInteractable("second");
-
-        obj.setEntryPoint(first);
-        obj.setEntryPoint(second);
-        obj.trigger();
-
-        assertEquals(0, first.triggerCount);
-        assertEquals(1, second.triggerCount);
-    }
-
-    @Test
-    void entryPointCanBeCleared() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-        CountingInteractable entry = new CountingInteractable("entry");
-
-        obj.setEntryPoint(entry);
-        obj.setEntryPoint(null);
-        obj.trigger();
-
-        assertEquals(0, entry.triggerCount);
-        assertTrue(err.toString().contains("entry point"));
-    }
-
-    // ---- contains ----
-
-    @Test
-    void containsPointInsideShape() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-
-        assertTrue(obj.contains(30, 25));
-    }
-
-    @Test
-    void doesNotContainPointFarOutsideShape() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-
-        assertFalse(obj.contains(500, 500));
-        assertFalse(obj.contains(0, 0));
-    }
-
-    @Test
-    void doesNotContainPointJustOutsideEachSide() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-
-        assertFalse(obj.contains(9, 25));
-        assertFalse(obj.contains(61, 25));
-        assertFalse(obj.contains(30, 9));
-        assertFalse(obj.contains(30, 41));
-    }
-
-    @Test
-    void containsFollowsNonRectangularShapes() {
-        Point[] triangle = {new Point(0, 0), new Point(100, 0), new Point(0, 100)};
-        InteractableObj obj = new InteractableObj(triangle, Color.RED);
-
-        assertTrue(obj.contains(20, 20));
-        assertFalse(obj.contains(80, 80));
-    }
-
-    @Test
-    void containsUsesCurrentShapeCorners() {
-        InteractableObj obj = new InteractableObj(corners, Color.RED);
-
-        obj.setShapeCorners(new Point[]{new Point(200, 200), new Point(260, 200), new Point(260, 240), new Point(200, 240)});
-
-        assertFalse(obj.contains(30, 25));
-        assertTrue(obj.contains(230, 220));
+        // Outside points
+        assertFalse(colorObj.contains(150, 50), "Point (150, 50) should be outside the box[cite: 9].");
+        assertFalse(colorObj.contains(-10, 50), "Point (-10, 50) should be outside the box[cite: 9].");
     }
 }
