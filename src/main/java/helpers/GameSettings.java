@@ -73,6 +73,16 @@ public class GameSettings {
         return Math.max(1, Math.round(value / scale));
     }
 
+    /**
+     * Returns the game's custom cursor for the given state.
+     * <p>
+     * Cursors are built lazily on first request and then cached, so repeated calls
+     * (for example on every mouse move) reuse the same {@link Cursor} instead of creating
+     * a new custom cursor each time.
+     *
+     * @param type which cursor to get: normal, clicked or highlighted
+     * @return the cached custom cursor for {@code type}, never {@code null}
+     */
     public static Cursor getCursor(CursorType type) {
         // Cached so hovering does not build a new custom cursor on every mouse move
         return CURSOR_CACHE.computeIfAbsent(type, t -> {
@@ -85,12 +95,29 @@ public class GameSettings {
         });
     }
 
+    /**
+     * The cursor states the game can show. Each constant maps to its own cursor image
+     * in {@link GameSettings}.
+     */
     public enum CursorType {
+        /** The default cursor, shown when nothing special is happening. */
         CURSOR,
+        /** Shown briefly after a mouse press. */
         CURSOR_CLICKED,
+        /** Shown while the mouse is over an interactable object. */
         CURSOR_HIGHLIGHTED
     }
 
+    /**
+     * Gives a frame the game cursor, with a short clicked flash on every mouse press.
+     * <p>
+     * The cursor switches to {@link CursorType#CURSOR_CLICKED} on press and returns to
+     * {@link CursorType#CURSOR} after 120 ms. This method does not show the highlighted
+     * cursor. Use {@link #setInteractableMouse(JComponent, Predicate)} for a panel that
+     * needs hover feedback over interactable objects.
+     *
+     * @param panel the frame that should use the game cursor
+     */
     public static void setCustomMouse(JFrame panel) {
         panel.setCursor(getCursor(CursorType.CURSOR));
         Timer revert = new Timer(120, e -> panel.setCursor(getCursor(CursorType.CURSOR)));
