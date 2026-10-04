@@ -199,6 +199,7 @@ public class HudUI extends LayerUI<JComponent> {
             Interactable done = current[0];
             done.lateTrigger();
             current[0] = triggerUntilMessage(done.getNextTrigger());
+            current[0] = triggerUntilMessage(done.getNextTrigger());
             return current[0] == null ? null : current[0].getMessage();
         });
     }
@@ -496,9 +497,6 @@ public class HudUI extends LayerUI<JComponent> {
      * @param g2d the graphics context to draw with
      */
     private void drawMessageText(Graphics2D g2d) {
-        if (this.currentMessage == null) {
-            return;
-        }
         int[] xs = this.messageBoxPoints.xpoints;
         int[] ys = this.messageBoxPoints.ypoints;
         int pad = GameSettings.scale(HudUI.TEXT_PADDING);
