@@ -16,11 +16,5 @@ public class BasicInteraction extends Interactable{
     }
 
     @Override
-    public void trigger() {
-        System.out.println(this.getMessage().getMessage());
-
-        if(this.nextTrigger != null) {
-            this.nextTrigger.trigger();
-        }
-    }
+    public void trigger() {}
 }

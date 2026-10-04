@@ -72,4 +72,19 @@ public abstract class Interactable {
      * Method that is called when an obj is triggered.
      */
     public abstract void trigger();
+
+    /**
+     * Method that is called when an obj is triggered. This triggers after the message is displayed.
+     */
+    public void lateTrigger() {
+        this.nextMessage();
+    }
+
+    /**
+     * Gets the next interactable in the chain.
+     * @return The next interactable to trigger after this one, or {@code null} if there is none.
+     */
+    public Interactable getNextTrigger() {
+        return this.nextTrigger;
+    }
 }

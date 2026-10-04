@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -16,6 +17,7 @@ public class GameSettings {
     private static final ImageLoader CURSOR = new ImageLoader("/images/UI/cursors/cursor.png");
     private static final ImageLoader CURSOR_CLICKED = new ImageLoader("/images/UI/cursors/cursor-clicked.png");
     private static final ImageLoader CURSOR_HIGHLIGHTED = new ImageLoader("/images/UI/cursors/cursor-highlighted.png");
+    /** The tip of the cursor, in pixels of the original cursor image files (before any resizing). */
     private static final Point CURSOR_POINT = new Point(20, 14);
     private static final Map<CursorType, Cursor> CURSOR_CACHE = new EnumMap<>(CursorType.class);
 
@@ -91,8 +93,52 @@ public class GameSettings {
                 case CURSOR_CLICKED -> GameSettings.CURSOR_CLICKED.getImage();
                 case CURSOR_HIGHLIGHTED -> GameSettings.CURSOR_HIGHLIGHTED.getImage();
             };
-            return Toolkit.getDefaultToolkit().createCustomCursor(cursorImage, GameSettings.CURSOR_POINT, "Custom Cursor");
+            return buildCursor(cursorImage);
         });
+    }
+
+    /**
+     * Builds a custom cursor from an image, resized to a size the operating system supports.
+     * <p>
+     * The OS only draws cursors up to its own maximum size, and the hotspot is not adjusted when
+     * the image is resized. So the image is shrunk here, and the hotspot ({@link #CURSOR_POINT}) is
+     * shrunk by the same amount, which keeps the click point under the tip of the drawn cursor.
+     *
+     * @param src the full-size cursor image
+     * @return a custom cursor whose click point matches the tip of the drawn image
+     */
+    private static Cursor buildCursor(Image src) {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        int w = src.getWidth(null);
+        int h = src.getHeight(null);
+        if (w <= 0 || h <= 0) {
+            // Size unknown, so there is nothing to scale against; use the image as it is
+            return toolkit.createCustomCursor(src, CURSOR_POINT, "Custom Cursor");
+        }
+
+        Dimension best = toolkit.getBestCursorSize(w, h);
+        // To see what is going on, uncomment:
+        // System.out.println("cursor image " + w + "x" + h + ", OS cursor size " + best.width + "x" + best.height);
+        if (best.width <= 0 || best.height <= 0) {
+            return Cursor.getDefaultCursor(); // custom cursors are not supported on this system
+        }
+
+        // Shrink to fit (never enlarge), keeping the shape; the rest of the canvas stays transparent
+        double ratio = Math.min(1.0, Math.min(best.width / (double) w, best.height / (double) h));
+        int drawW = Math.max(1, (int) Math.round(w * ratio));
+        int drawH = Math.max(1, (int) Math.round(h * ratio));
+
+        BufferedImage fitted = new BufferedImage(best.width, best.height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = fitted.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.drawImage(src, 0, 0, drawW, drawH, null);
+        g.dispose();
+
+        Point hotspot = new Point(
+                Math.min(best.width - 1, (int) Math.round(CURSOR_POINT.x * ratio)),
+                Math.min(best.height - 1, (int) Math.round(CURSOR_POINT.y * ratio)));
+        return toolkit.createCustomCursor(fitted, hotspot, "Custom Cursor");
     }
 
     /**
@@ -120,7 +166,7 @@ public class GameSettings {
      */
     public static void setCustomMouse(JFrame panel) {
         panel.setCursor(getCursor(CursorType.CURSOR));
-        Timer revert = new Timer(120, e -> panel.setCursor(getCursor(CursorType.CURSOR)));
+        Timer revert = new Timer(120, _ -> panel.setCursor(getCursor(CursorType.CURSOR)));
         revert.setRepeats(false);
         panel.addMouseListener(new MouseAdapter() {
             @Override
@@ -143,7 +189,7 @@ public class GameSettings {
     public static void setInteractableMouse(JComponent surface, Predicate<Point> overInteractable) {
         surface.setCursor(getCursor(CursorType.CURSOR));
 
-        Timer revert = new Timer(120, e -> surface.setCursor(restingCursor(surface, overInteractable)));
+        Timer revert = new Timer(120, _ -> surface.setCursor(restingCursor(surface, overInteractable)));
         revert.setRepeats(false);
 
         MouseAdapter adapter = new MouseAdapter() {

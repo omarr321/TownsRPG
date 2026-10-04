@@ -18,7 +18,5 @@ public class DialogInteraction extends Interactable{
     }
 
     @Override
-    public void trigger() {
-
-    }
+    public void trigger() {}
 }

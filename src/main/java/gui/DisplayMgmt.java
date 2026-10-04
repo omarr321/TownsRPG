@@ -663,20 +663,23 @@ public class DisplayMgmt {
 
             MessageData box = new MessageData("This is a box.");
             Queue<MessageData> replaceMessages = new LinkedList<>();
-            replaceMessages.add(new MessageData("...Still a box."));
+            replaceMessages.add(new MessageData("The box is sturdy."));
+            replaceMessages.add(new MessageData("It is square..."));
+            replaceMessages.add(new MessageData("... Nothing else comes to mine..."));
+            replaceMessages.add(new MessageData("Its a box."));
             FlagInteraction temp = new FlagInteraction(box, replaceMessages, this.player, "BASIC_ROOM_1");
 
             box = new MessageData("The box is made of wood.");
             replaceMessages = new LinkedList<>();
-            replaceMessages.add(new MessageData("...I think it might be maple..."));
-            replaceMessages.add(new MessageData("...maybe fer..."));
-            replaceMessages.add(new MessageData("...could be oak..."));
-            replaceMessages.add(new MessageData("...looks like pine"));
-            replaceMessages.add(new MessageData("...aspen has that texture..."));
-            replaceMessages.add(new MessageData("...tastes like birch..."));
+            replaceMessages.add(new MessageData("I think it might be maple..."));
+            replaceMessages.add(new MessageData("Maybe fer..."));
+            replaceMessages.add(new MessageData("Could be oak..."));
+            replaceMessages.add(new MessageData("Looks like pine..."));
+            replaceMessages.add(new MessageData("Aspen has that texture..."));
+            replaceMessages.add(new MessageData("Tastes like birch..."));
             replaceMessages.add(new MessageData("..."));
-            replaceMessages.add(new MessageData("... whatever it is..."));
-            replaceMessages.add(new MessageData("... it is wood."));
+            replaceMessages.add(new MessageData("Whatever it is..."));
+            replaceMessages.add(new MessageData("It is wood."));
 
             FlagInteraction temp2 = new FlagInteraction(box, replaceMessages, this.player, "BASIC_ROOM_2");
             temp.setNextTrigger(temp2);
@@ -728,11 +731,14 @@ public class DisplayMgmt {
             lightingUI.setShowInteractable(showInteractable);
             lightingUI.setInteractables(room::getInteractable);
 
-            //5 - Creating the Hud UI
+            //5 - Creating the graphics for the room and applying the lightUI to it.
+            JPanel roomPanel = room.putToScreen();
+
+            //6 - Creating the Hud UI. Done after putToScreen() because HudUI's constructor
+            //    now asks the room for the message box position.
             HudUI hudUI = new HudUI(room);
 
-            //6 - Creating the graphics for the room and applying the lightUI to it and then the HudUI to it.
-            JPanel roomPanel = room.putToScreen();
+            //7 - Applying the lightUI and then the HudUI to the room.
             JLayer<JComponent> litLayer = new JLayer<>(roomPanel, lightingUI);
             JLayer<JComponent> hudLayer = new JLayer<>(litLayer, hudUI);
 
@@ -741,6 +747,9 @@ public class DisplayMgmt {
             MouseAdapter interact = new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
+                    if (hudUI.isBlockingInput()) {
+                        return; // a message is up (or was just clicked away), ignore the click
+                    }
                     for (InteractableObj obj : room.getInteractable()) {
                         helpers.Point[] corners = obj.getShapeCorners();
                         Polygon shape = new Polygon();
@@ -748,14 +757,16 @@ public class DisplayMgmt {
                             shape.addPoint(p.getX(), p.getY());
                         }
                         if (shape.contains(e.getX(), e.getY())) {
-                            obj.trigger();
+                            // Triggers the entry point, shows its message, and follows the chain
+                            hudUI.displayInteraction(obj.getEntryPoint());
                             break; // only trigger the one that was clicked
                         }
                     }
                 }
             };
             roomPanel.addMouseListener(interact);
-            GameSettings.setInteractableMouse(roomPanel, p -> room.getInteractable().stream().anyMatch(o -> o.contains(p.x, p.y)));
+            GameSettings.setInteractableMouse(roomPanel,
+                    p -> !hudUI.isBlockingInput() && room.getInteractable().stream().anyMatch(o -> o.contains(p.x, p.y)));
 
             return hudPanel;
         }
