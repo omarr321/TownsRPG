@@ -199,7 +199,6 @@ public class HudUI extends LayerUI<JComponent> {
             Interactable done = current[0];
             done.lateTrigger();
             current[0] = triggerUntilMessage(done.getNextTrigger());
-            current[0] = triggerUntilMessage(done.getNextTrigger());
             return current[0] == null ? null : current[0].getMessage();
         });
     }

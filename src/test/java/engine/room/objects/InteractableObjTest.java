@@ -50,6 +50,51 @@ class InteractableObjTest {
     }
 
     @Test
+    void testImageConstructorWithoutWarpFlag() {
+        // The (corners, imagePath) constructor: an image object that is warped unless told otherwise
+        InteractableObj obj = new InteractableObj(sampleCorners, "assets/test_image.png");
+
+        assertArrayEquals(sampleCorners, obj.getShapeCorners(), "Shape corners should match.");
+        assertEquals(RoomObj.DrawType.IMAGE, obj.getType(), "Image-based object should have DrawType IMAGE.");
+        assertEquals("assets/test_image.png", obj.getImagePath(), "Image path should match.");
+        assertNull(obj.getColor(), "An image object has no solid color.");
+        assertTrue(obj.getWarped(), "Warping is on by default.");
+        assertNull(obj.getEntryPoint(), "Entry point should initially be null.");
+    }
+
+    @Test
+    void testImageConstructorsAgreeExceptForTheWarpFlag() {
+        InteractableObj defaultWarp = new InteractableObj(sampleCorners, "assets/test_image.png");
+        InteractableObj warped = new InteractableObj(sampleCorners, "assets/test_image.png", true);
+        InteractableObj flat = new InteractableObj(sampleCorners, "assets/test_image.png", false);
+
+        assertEquals(warped.getWarped(), defaultWarp.getWarped());
+        assertEquals(warped.getType(), defaultWarp.getType());
+        assertEquals(warped.getImagePath(), defaultWarp.getImagePath());
+        assertFalse(flat.getWarped(), "Passing false turns warping off.");
+        assertEquals(RoomObj.DrawType.IMAGE, flat.getType());
+    }
+
+    @Test
+    void testImageConstructorObjectIsFullyInteractable() {
+        // An object made with the two-argument image constructor behaves like any other InteractableObj
+        InteractableObj obj = new InteractableObj(sampleCorners, "assets/test_image.png");
+        AtomicBoolean wasTriggered = new AtomicBoolean(false);
+        obj.setEntryPoint(new BasicInteraction(new MessageData("Hi")) {
+            @Override
+            public void trigger() {
+                wasTriggered.set(true);
+            }
+        });
+
+        obj.trigger();
+
+        assertTrue(wasTriggered.get());
+        assertTrue(obj.contains(50, 50));
+        assertFalse(obj.contains(150, 50));
+    }
+
+    @Test
     void testSetAndGetEntryPoint() {
         // Create a mock/basic interactable to act as the entry point
         Interactable interaction = new BasicInteraction(new MessageData("Interaction triggered!"));

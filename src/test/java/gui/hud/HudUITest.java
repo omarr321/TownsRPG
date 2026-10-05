@@ -29,6 +29,8 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,7 +137,12 @@ class HudUITest {
         }
     }
 
-    /** An interactable that writes every trigger/lateTrigger into a shared log. */
+    /**
+     * An interactable that writes every trigger/lateTrigger into a shared log.
+     * <p>
+     * It deliberately does not call {@code super.lateTrigger()}, so these tests only see what HudUI itself
+     * triggers and don't depend on what the base class does in lateTrigger (see {@link Counting} for that).
+     */
     static class Recording extends Interactable {
         private final String id;
         private final List<String> log;
@@ -154,7 +161,20 @@ class HudUITest {
         @Override
         public void lateTrigger() {
             log.add(id + ".late");
-            super.lateTrigger();
+        }
+    }
+
+    /** An interactable that only counts trigger() calls and keeps the base class's own lateTrigger(). */
+    static class Counting extends Interactable {
+        int triggers = 0;
+
+        Counting(MessageData message) {
+            super(message);
+        }
+
+        @Override
+        public void trigger() {
+            triggers++;
         }
     }
 
@@ -765,6 +785,31 @@ class HudUITest {
         }
 
         @Test
+        @DisplayName("With the base class's own lateTrigger, every interactable in a chain is triggered exactly once")
+        void testEachInteractableTriggeredOnce() throws Exception {
+            onEdt(() -> {
+                Counting a = new Counting(plain("A"));
+                Counting b = new Counting(plain("B"));
+                Counting c = new Counting(null); // no message: triggered and skipped
+                Counting d = new Counting(plain("D"));
+                a.setNextTrigger(b);
+                b.setNextTrigger(c);
+                c.setNextTrigger(d);
+
+                hud.displayInteraction(a);
+                for (int i = 0; i < 3; i++) { // three messages: A, B, D
+                    click();
+                    click();
+                }
+
+                assertEquals(1, a.triggers, "A");
+                assertEquals(1, b.triggers, "B");
+                assertEquals(1, c.triggers, "C");
+                assertEquals(1, d.triggers, "D");
+            });
+        }
+
+        @Test
         @DisplayName("BasicInteraction chains show every message")
         void testBasicInteractionChain() throws Exception {
             onEdt(() -> {
@@ -1343,7 +1388,7 @@ class HudUITest {
             long deadline = System.currentTimeMillis() + 3000;
             while (!revealed && System.currentTimeMillis() < deadline) {
                 settle(50);
-                BufferedImage now = onEdtGet(() -> render());
+                BufferedImage now = onEdtGet(HudUITest.this::render);
                 revealed = regionDiffers(untyped, now, TEXT_AREA);
             }
 
@@ -1596,6 +1641,149 @@ class HudUITest {
     }
 
     // ==========================================================================================
+    // drawMessageText with no current message
+    //
+    // paint() only calls drawMessageText while showMessage is true, and the public API always sets
+    // showMessage and currentMessage together, so "showing with no message" cannot happen through
+    // displayMessage. These tests call the private method directly, and force the impossible state
+    // with reflection, to prove that it can never crash or draw stray text if it ever did.
+    // They check behaviour only (no exception, nothing drawn), not how HudUI achieves it, so they
+    // hold whether or not drawMessageText has an explicit null check.
+    // ==========================================================================================
+
+    @Nested
+    @DisplayName("drawMessageText with no current message")
+    class DrawMessageTextNoMessageTests {
+
+        private void callDrawMessageText(Graphics2D g2d) throws Exception {
+            Method m = HudUI.class.getDeclaredMethod("drawMessageText", Graphics2D.class);
+            m.setAccessible(true);
+            try {
+                m.invoke(hud, g2d);
+            } catch (java.lang.reflect.InvocationTargetException e) {
+                // Rethrow the real cause so a failure points at HudUI, not at reflection
+                if (e.getCause() instanceof Exception ex) {
+                    throw ex;
+                }
+                throw e;
+            }
+        }
+
+        private Object field(String name) throws Exception {
+            Field f = HudUI.class.getDeclaredField(name);
+            f.setAccessible(true);
+            return f.get(hud);
+        }
+
+        private void setField(String name, Object value) throws Exception {
+            Field f = HudUI.class.getDeclaredField(name);
+            f.setAccessible(true);
+            f.set(hud, value);
+        }
+
+        private BufferedImage blankImage() {
+            return new BufferedImage(SCREEN_W, SCREEN_H, BufferedImage.TYPE_INT_ARGB);
+        }
+
+        private boolean anythingDrawn(BufferedImage image) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                for (int x = 0; x < image.getWidth(); x++) {
+                    if (image.getRGB(x, y) != 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /** Runs drawMessageText onto a blank image and returns the image. */
+        private BufferedImage drawOntoBlank() throws Exception {
+            BufferedImage image = blankImage();
+            Graphics2D g = image.createGraphics();
+            try {
+                callDrawMessageText(g);
+            } finally {
+                g.dispose();
+            }
+            return image;
+        }
+
+        @Test
+        @DisplayName("Before any message was ever shown, it draws nothing and does not throw")
+        void testNeverShownDrawsNothing() throws Exception {
+            onEdt(() -> {
+                assertNull(field("currentMessage"));
+
+                BufferedImage image = assertDoesNotThrow(this::drawOntoBlank);
+
+                assertFalse(anythingDrawn(image));
+            });
+        }
+
+        @Test
+        @DisplayName("After a message is closed, it draws nothing and does not throw")
+        void testAfterCloseDrawsNothing() throws Exception {
+            onEdt(() -> {
+                hud.displayMessage(plain("Hello World"));
+                click(); // finish typing so the text is wrapped and cached
+                render();
+                hud.displayMessage(null); // closeMessage clears currentMessage
+                assertNull(field("currentMessage"));
+
+                BufferedImage image = assertDoesNotThrow(this::drawOntoBlank);
+
+                assertFalse(anythingDrawn(image));
+            });
+        }
+
+        @Test
+        @DisplayName("Positive control: with a typed message the same call does draw text")
+        void testWithMessageDraws() throws Exception {
+            onEdt(() -> {
+                hud.displayMessage(plain("Hello World"));
+                click(); // finish typing
+
+                BufferedImage image = drawOntoBlank();
+
+                assertTrue(anythingDrawn(image), "Text should be drawn");
+            });
+        }
+
+        @Test
+        @DisplayName("Showing with no message (an impossible state forced by reflection) paints the box but no text")
+        void testForcedShowWithoutMessage() throws Exception {
+            onEdt(() -> {
+                BufferedImage idle = render();
+
+                setField("showMessage", true);
+                assertNull(field("currentMessage"));
+
+                BufferedImage image = assertDoesNotThrow(() -> render());
+
+                assertTrue(regionDiffers(idle, image, BOX_EMPTY_SPOT), "The box is still drawn");
+                assertTrue(regionIsBackground(image, LEFT_PLATE_SPOT), "No name plate without a message");
+                assertTrue(regionIsBackground(image, RIGHT_PLATE_SPOT), "No name plate without a message");
+            });
+        }
+
+        @Test
+        @DisplayName("Forced show with no message leaves the text area exactly as an empty message would")
+        void testForcedShowHasNoTextPixels() throws Exception {
+            onEdt(() -> {
+                setField("showMessage", true);
+                BufferedImage noMessage = render();
+
+                // Same box, but a real (empty) message: it also draws no text, so the pictures must match
+                setField("showMessage", false);
+                hud.displayMessage(plain(""));
+                BufferedImage emptyMessage = render();
+
+                assertFalse(regionDiffers(noMessage, emptyMessage, TEXT_AREA));
+            });
+        }
+    }
+
+    // ==========================================================================================
     // Real room
     // ==========================================================================================
 
@@ -1627,7 +1815,7 @@ class HudUITest {
 
         @Test
         @DisplayName("The message box lines up with the room's back wall")
-        void testBoxMatchesRoom() throws Exception {
+        void testBoxMatchesRoom(){
             Point[] box = realRoom.getMessageBoxPoints(0.30f);
             assertNotNull(box);
             assertEquals(480, box[0].getX());

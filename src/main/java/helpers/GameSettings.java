@@ -108,15 +108,64 @@ public class GameSettings {
      * @return a custom cursor whose click point matches the tip of the drawn image
      */
     private static Cursor buildCursor(Image src) {
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        return buildCursor(src, SYSTEM_CURSORS);
+    }
+
+    /**
+     * The two answers {@link #buildCursor(Image, CursorFactory)} needs from the operating system.
+     * They are split out of {@link Toolkit} so tests can fake an OS that reports an unusual cursor size.
+     */
+    interface CursorFactory {
+        /**
+         * The cursor size the OS will actually draw for an image of the given size.
+         *
+         * @param width  the image width
+         * @param height the image height
+         * @return the supported size; a width or height of 0 or less means custom cursors are not supported
+         */
+        Dimension getBestCursorSize(int width, int height);
+
+        /**
+         * Creates a custom cursor.
+         *
+         * @param image   the cursor image
+         * @param hotspot the click point inside the image
+         * @param name    the cursor's name
+         * @return the new cursor
+         */
+        Cursor createCustomCursor(Image image, Point hotspot, String name);
+    }
+
+    /** The real operating system's cursor support, looked up each time it is used. */
+    private static final CursorFactory SYSTEM_CURSORS = new CursorFactory() {
+        @Override
+        public Dimension getBestCursorSize(int width, int height) {
+            return Toolkit.getDefaultToolkit().getBestCursorSize(width, height);
+        }
+
+        @Override
+        public Cursor createCustomCursor(Image image, Point hotspot, String name) {
+            return Toolkit.getDefaultToolkit().createCustomCursor(image, hotspot, name);
+        }
+    };
+
+    /**
+     * Does the work of {@link #buildCursor(Image)} against any {@link CursorFactory}.
+     * Package-private so tests can drive it with a fake one.
+     *
+     * @param src     the full-size cursor image
+     * @param system  where the OS cursor size and the cursor itself come from
+     * @return a custom cursor, or the default cursor if the system does not support custom ones
+     */
+    static Cursor buildCursor(Image src, CursorFactory system) {
         int w = src.getWidth(null);
         int h = src.getHeight(null);
         if (w <= 0 || h <= 0) {
             // Size unknown, so there is nothing to scale against; use the image as it is
-            return toolkit.createCustomCursor(src, CURSOR_POINT, "Custom Cursor");
+            return system.createCustomCursor(src, CURSOR_POINT, "Custom Cursor");
         }
 
-        Dimension best = toolkit.getBestCursorSize(w, h);
+        Dimension best = system.getBestCursorSize(w, h);
         // To see what is going on, uncomment:
         // System.out.println("cursor image " + w + "x" + h + ", OS cursor size " + best.width + "x" + best.height);
         if (best.width <= 0 || best.height <= 0) {
@@ -138,7 +187,7 @@ public class GameSettings {
         Point hotspot = new Point(
                 Math.min(best.width - 1, (int) Math.round(CURSOR_POINT.x * ratio)),
                 Math.min(best.height - 1, (int) Math.round(CURSOR_POINT.y * ratio)));
-        return toolkit.createCustomCursor(fitted, hotspot, "Custom Cursor");
+        return system.createCustomCursor(fitted, hotspot, "Custom Cursor");
     }
 
     /**

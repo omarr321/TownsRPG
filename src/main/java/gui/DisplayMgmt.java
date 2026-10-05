@@ -503,6 +503,7 @@ public class DisplayMgmt {
             Room room = createDebugRoom();
             JPanel roomJ = room.putToScreen();
 
+            /*
             MouseAdapter clicking = new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
@@ -520,6 +521,7 @@ public class DisplayMgmt {
                 }
             };
             roomJ.addMouseListener(clicking);
+             */
             GameSettings.setInteractableMouse(roomJ, p -> room.getInteractable().stream().anyMatch(o -> o.contains(p.x, p.y)));
 
             return roomJ;

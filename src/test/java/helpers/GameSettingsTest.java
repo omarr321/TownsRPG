@@ -10,11 +10,17 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -515,6 +521,214 @@ public class GameSettingsTest {
         GameSettings.screenHeight = 2160;
 
         assertSame(before, cursor(GameSettings.CursorType.CURSOR));
+    }
+
+    // ==========================================================================================
+    // buildCursor, against a fake operating system
+    //
+    // What the OS answers for getBestCursorSize decides which branch runs, and a test can't make a real
+    // OS answer "unsupported" or "I don't know the image size". So these tests hand buildCursor a fake
+    // CursorFactory. They need no display, so they also run on headless machines.
+    // ==========================================================================================
+
+    /** A fake OS that answers with a fixed best size and records what it was asked to create. */
+    private static class FakeOs implements GameSettings.CursorFactory {
+        final Dimension best;
+        /** What createCustomCursor returns, so tests can tell it apart from the default cursor. */
+        final Cursor created = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        int sizeCalls = 0;
+        int createCalls = 0;
+        int askedWidth;
+        int askedHeight;
+        Image createdImage;
+        Point createdHotspot;
+        String createdName;
+
+        FakeOs(int bestWidth, int bestHeight) {
+            this.best = new Dimension(bestWidth, bestHeight);
+        }
+
+        @Override
+        public Dimension getBestCursorSize(int width, int height) {
+            sizeCalls++;
+            askedWidth = width;
+            askedHeight = height;
+            return best;
+        }
+
+        @Override
+        public Cursor createCustomCursor(Image image, Point hotspot, String name) {
+            createCalls++;
+            createdImage = image;
+            createdHotspot = hotspot;
+            createdName = name;
+            return created;
+        }
+    }
+
+    /** An image that reports whatever size it is given, e.g. -1 for "not loaded yet". */
+    private static class FixedSizeImage extends Image {
+        private final int width;
+        private final int height;
+
+        FixedSizeImage(int width, int height) {
+            this.width = width;
+            this.height = height;
+        }
+
+        @Override
+        public int getWidth(ImageObserver observer) {
+            return width;
+        }
+
+        @Override
+        public int getHeight(ImageObserver observer) {
+            return height;
+        }
+
+        @Override
+        public ImageProducer getSource() {
+            return null;
+        }
+
+        @Override
+        public Graphics getGraphics() {
+            return null;
+        }
+
+        @Override
+        public Object getProperty(String name, ImageObserver observer) {
+            return null;
+        }
+    }
+
+    private static BufferedImage solidImage(int width, int height) {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                image.setRGB(x, y, 0xFFFF0000);
+            }
+        }
+        return image;
+    }
+
+    private static int alphaAt(BufferedImage image, int x, int y) {
+        return image.getRGB(x, y) >>> 24;
+    }
+
+    @Test
+    void buildCursorUsesTheImageAsItIsWhenItsSizeIsUnknown() {
+        int[][] sizes = {{-1, 10}, {10, -1}, {0, 10}, {10, 0}, {0, 0}, {-1, -1}};
+
+        for (int[] size : sizes) {
+            FakeOs os = new FakeOs(32, 32);
+            Image image = new FixedSizeImage(size[0], size[1]);
+
+            Cursor result = GameSettings.buildCursor(image, os);
+
+            String which = size[0] + "x" + size[1];
+            assertSame(os.created, result, which);
+            assertEquals(1, os.createCalls, which);
+            assertSame(image, os.createdImage, which + ": the image is not resized");
+            assertEquals(new Point(20, 14), os.createdHotspot, which + ": the hotspot is not scaled");
+            assertEquals("Custom Cursor", os.createdName, which);
+            assertEquals(0, os.sizeCalls, which + ": there is nothing to ask the OS about");
+        }
+    }
+
+    @Test
+    void buildCursorFallsBackToTheDefaultCursorWhenTheOsHasNoCustomCursors() {
+        int[][] unsupported = {{0, 0}, {0, 32}, {32, 0}, {-1, -1}, {-1, 32}, {32, -1}};
+
+        for (int[] best : unsupported) {
+            FakeOs os = new FakeOs(best[0], best[1]);
+
+            Cursor result = GameSettings.buildCursor(solidImage(40, 30), os);
+
+            String which = best[0] + "x" + best[1];
+            assertSame(Cursor.getDefaultCursor(), result, which);
+            assertEquals(1, os.sizeCalls, which);
+            assertEquals(0, os.createCalls, which + ": no custom cursor may be created");
+        }
+    }
+
+    @Test
+    void buildCursorAsksTheOsAboutTheRealImageSize() {
+        FakeOs os = new FakeOs(0, 0);
+
+        GameSettings.buildCursor(solidImage(40, 30), os);
+
+        assertEquals(40, os.askedWidth);
+        assertEquals(30, os.askedHeight);
+    }
+
+    @Test
+    void buildCursorNeverEnlargesAnImageThatAlreadyFits() {
+        FakeOs os = new FakeOs(64, 64);
+
+        Cursor result = GameSettings.buildCursor(solidImage(40, 30), os);
+
+        assertSame(os.created, result);
+        assertEquals("Custom Cursor", os.createdName);
+        BufferedImage canvas = (BufferedImage) os.createdImage;
+        assertEquals(64, canvas.getWidth());
+        assertEquals(64, canvas.getHeight());
+        assertEquals(new Point(20, 14), os.createdHotspot, "Ratio is 1, so the hotspot does not move");
+        assertTrue(alphaAt(canvas, 20, 15) > 200, "The image is drawn at its own size...");
+        assertEquals(0, alphaAt(canvas, 50, 10), "...so the rest of the canvas stays transparent");
+        assertEquals(0, alphaAt(canvas, 10, 40), "...so the rest of the canvas stays transparent");
+    }
+
+    @Test
+    void buildCursorShrinksAnImageThatIsTooBigAndMovesTheHotspotWithIt() {
+        FakeOs os = new FakeOs(20, 20); // 40x30 into 20x20: width is the limit, ratio 0.5
+
+        GameSettings.buildCursor(solidImage(40, 30), os);
+
+        BufferedImage canvas = (BufferedImage) os.createdImage;
+        assertEquals(20, canvas.getWidth());
+        assertEquals(20, canvas.getHeight());
+        assertEquals(new Point(10, 7), os.createdHotspot, "(20,14) shrunk by 0.5");
+        assertTrue(alphaAt(canvas, 10, 5) > 200, "Shrunk image is drawn in the top-left 20x15");
+        assertEquals(0, alphaAt(canvas, 10, 17), "Below the shrunk 20x15 image the canvas is transparent");
+    }
+
+    @Test
+    void buildCursorShrinksByWhicheverSideIsTheTighterLimit() {
+        FakeOs wideAndShort = new FakeOs(100, 15); // height is the limit: 15/30 = 0.5
+        GameSettings.buildCursor(solidImage(40, 30), wideAndShort);
+        assertEquals(new Point(10, 7), wideAndShort.createdHotspot);
+        assertEquals(100, ((BufferedImage) wideAndShort.createdImage).getWidth());
+        assertEquals(15, ((BufferedImage) wideAndShort.createdImage).getHeight());
+
+        FakeOs narrowAndTall = new FakeOs(20, 100); // width is the limit: 20/40 = 0.5
+        GameSettings.buildCursor(solidImage(40, 30), narrowAndTall);
+        assertEquals(new Point(10, 7), narrowAndTall.createdHotspot);
+        assertEquals(20, ((BufferedImage) narrowAndTall.createdImage).getWidth());
+        assertEquals(100, ((BufferedImage) narrowAndTall.createdImage).getHeight());
+    }
+
+    @Test
+    void buildCursorKeepsTheHotspotInsideTheCanvas() {
+        // A 10x10 image on a 10x10 canvas: the (20,14) tip would be off the canvas, so it is pulled back inside
+        FakeOs os = new FakeOs(10, 10);
+
+        GameSettings.buildCursor(solidImage(10, 10), os);
+
+        assertEquals(new Point(9, 9), os.createdHotspot);
+    }
+
+    @Test
+    void buildCursorCopesWithAnExtremeShrink() {
+        FakeOs os = new FakeOs(10, 10); // 1000x2 into 10x10: ratio 0.01, the height would round to 0
+
+        Cursor result = assertDoesNotThrow(() -> GameSettings.buildCursor(solidImage(1000, 2), os));
+
+        assertSame(os.created, result);
+        BufferedImage canvas = (BufferedImage) os.createdImage;
+        assertEquals(10, canvas.getWidth());
+        assertEquals(10, canvas.getHeight());
+        assertEquals(new Point(0, 0), os.createdHotspot);
     }
 
     // ==========================================================================================
