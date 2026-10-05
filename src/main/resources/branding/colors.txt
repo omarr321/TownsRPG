@@ -16,6 +16,6 @@ Wordmark (logo.svg)
 -------------------
 "Towns"              #C4C8D4   light grey
 "RPG"                #D9822B   amber
-"Engine"             #8E94A8   mid grey
+"engine"             #8E94A8   mid grey
 
-Font: Georgia, 'Times New Roman', serif (bold; "Engine" regular weight)
+Font: Georgia, 'Times New Roman', serif (bold; "engine" regular weight)
